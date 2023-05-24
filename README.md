@@ -1,2 +1,3 @@
+![NinjaTrader Logo](/images/NT-Logo.jpg)
 # NinjaTraderIndicators
-NinjaTrader Indicators
+Custom indicators for NinjaTrader 8.

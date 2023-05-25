@@ -44,8 +44,8 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 				//Disable this property if your indicator requires custom values that cumulate with each new market data event. 
 				//See Help Guide for additional information.
 				IsSuspendedWhileInactive					= true;
-				TimeRangeInMin_AfterOpen					= 10;
-				TimeRangeInMin_BeforeOpen					= 60;
+				TimeSpanInMin_AfterOpen					= 10;
+				TimeSpanInMin_BeforeOpen					= 60;
 				MarketOpenTime                              = new TimeSpan(21, 15, 00);
 				FontColor					= Brushes.DodgerBlue;
 			}
@@ -70,13 +70,13 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 				&& (currentBarDateTime.DayOfWeek != DayOfWeek.Saturday) 
 				&& (currentBarDateTime.DayOfWeek != DayOfWeek.Sunday))
 			{
-				TimeRangeInMinutes = TimeRangeInMin_AfterOpen;
-				Print("Using: " + TimeRangeInMin_AfterOpen);
+				TimeRangeInMinutes = TimeSpanInMin_AfterOpen;
+				Print("Using: " + TimeSpanInMin_AfterOpen);
 			}
 			else
 			{
-				TimeRangeInMinutes = TimeRangeInMin_BeforeOpen;
-				Print("Using: " + TimeRangeInMin_BeforeOpen);
+				TimeRangeInMinutes = TimeSpanInMin_BeforeOpen;
+				Print("Using: " + TimeSpanInMin_BeforeOpen);
 			}
 			
 			if (TimeRangeInMinutes <= 0)
@@ -130,14 +130,14 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 		#region Properties
 		[NinjaScriptProperty]
 		[Range(1, 1440)]
-		[Display(Name="Time Range In Minutes (before open)", Description="Time range (in minutes) used to calculate speed.", Order=1, GroupName="Parameters")]
-		public int TimeRangeInMin_BeforeOpen
+		[Display(Name="Time Span In Minutes (before open)", Description="Time span (in minutes) used to calculate speed.", Order=1, GroupName="Parameters")]
+		public int TimeSpanInMin_BeforeOpen
 		{ get; set; }
 		
 		[NinjaScriptProperty]
 		[Range(1, 1400)]
-		[Display(Name="Time Range In Minutes (after open)", Description="Time range (in minutes) used to calculate speed.", Order=2, GroupName="Parameters")]
-		public int TimeRangeInMin_AfterOpen
+		[Display(Name="Time Span In Minutes (after open)", Description="Time span (in minutes) used to calculate speed.", Order=2, GroupName="Parameters")]
+		public int TimeSpanInMin_AfterOpen
 		{ get; set; }
 		
 		[NinjaScriptProperty]
@@ -187,18 +187,18 @@ namespace NinjaTrader.NinjaScript.Indicators
 	public partial class Indicator : NinjaTrader.Gui.NinjaScript.IndicatorRenderBase
 	{
 		private SebIndicators.BarSpeed[] cacheBarSpeed;
-		public SebIndicators.BarSpeed BarSpeed(int timeRangeInMin_BeforeOpen, int timeRangeInMin_AfterOpen, TimeSpan marketOpenTime, Brush fontColor)
+		public SebIndicators.BarSpeed BarSpeed(int timeSpanInMin_BeforeOpen, int timeSpanInMin_AfterOpen, TimeSpan marketOpenTime, Brush fontColor)
 		{
-			return BarSpeed(Input, timeRangeInMin_BeforeOpen, timeRangeInMin_AfterOpen, marketOpenTime, fontColor);
+			return BarSpeed(Input, timeSpanInMin_BeforeOpen, timeSpanInMin_AfterOpen, marketOpenTime, fontColor);
 		}
 
-		public SebIndicators.BarSpeed BarSpeed(ISeries<double> input, int timeRangeInMin_BeforeOpen, int timeRangeInMin_AfterOpen, TimeSpan marketOpenTime, Brush fontColor)
+		public SebIndicators.BarSpeed BarSpeed(ISeries<double> input, int timeSpanInMin_BeforeOpen, int timeSpanInMin_AfterOpen, TimeSpan marketOpenTime, Brush fontColor)
 		{
 			if (cacheBarSpeed != null)
 				for (int idx = 0; idx < cacheBarSpeed.Length; idx++)
-					if (cacheBarSpeed[idx] != null && cacheBarSpeed[idx].TimeRangeInMin_BeforeOpen == timeRangeInMin_BeforeOpen && cacheBarSpeed[idx].TimeRangeInMin_AfterOpen == timeRangeInMin_AfterOpen && cacheBarSpeed[idx].MarketOpenTime == marketOpenTime && cacheBarSpeed[idx].FontColor == fontColor && cacheBarSpeed[idx].EqualsInput(input))
+					if (cacheBarSpeed[idx] != null && cacheBarSpeed[idx].TimeSpanInMin_BeforeOpen == timeSpanInMin_BeforeOpen && cacheBarSpeed[idx].TimeSpanInMin_AfterOpen == timeSpanInMin_AfterOpen && cacheBarSpeed[idx].MarketOpenTime == marketOpenTime && cacheBarSpeed[idx].FontColor == fontColor && cacheBarSpeed[idx].EqualsInput(input))
 						return cacheBarSpeed[idx];
-			return CacheIndicator<SebIndicators.BarSpeed>(new SebIndicators.BarSpeed(){ TimeRangeInMin_BeforeOpen = timeRangeInMin_BeforeOpen, TimeRangeInMin_AfterOpen = timeRangeInMin_AfterOpen, MarketOpenTime = marketOpenTime, FontColor = fontColor }, input, ref cacheBarSpeed);
+			return CacheIndicator<SebIndicators.BarSpeed>(new SebIndicators.BarSpeed(){ TimeSpanInMin_BeforeOpen = timeSpanInMin_BeforeOpen, TimeSpanInMin_AfterOpen = timeSpanInMin_AfterOpen, MarketOpenTime = marketOpenTime, FontColor = fontColor }, input, ref cacheBarSpeed);
 		}
 	}
 }
@@ -207,14 +207,14 @@ namespace NinjaTrader.NinjaScript.MarketAnalyzerColumns
 {
 	public partial class MarketAnalyzerColumn : MarketAnalyzerColumnBase
 	{
-		public Indicators.SebIndicators.BarSpeed BarSpeed(int timeRangeInMin_BeforeOpen, int timeRangeInMin_AfterOpen, TimeSpan marketOpenTime, Brush fontColor)
+		public Indicators.SebIndicators.BarSpeed BarSpeed(int timeSpanInMin_BeforeOpen, int timeSpanInMin_AfterOpen, TimeSpan marketOpenTime, Brush fontColor)
 		{
-			return indicator.BarSpeed(Input, timeRangeInMin_BeforeOpen, timeRangeInMin_AfterOpen, marketOpenTime, fontColor);
+			return indicator.BarSpeed(Input, timeSpanInMin_BeforeOpen, timeSpanInMin_AfterOpen, marketOpenTime, fontColor);
 		}
 
-		public Indicators.SebIndicators.BarSpeed BarSpeed(ISeries<double> input , int timeRangeInMin_BeforeOpen, int timeRangeInMin_AfterOpen, TimeSpan marketOpenTime, Brush fontColor)
+		public Indicators.SebIndicators.BarSpeed BarSpeed(ISeries<double> input , int timeSpanInMin_BeforeOpen, int timeSpanInMin_AfterOpen, TimeSpan marketOpenTime, Brush fontColor)
 		{
-			return indicator.BarSpeed(input, timeRangeInMin_BeforeOpen, timeRangeInMin_AfterOpen, marketOpenTime, fontColor);
+			return indicator.BarSpeed(input, timeSpanInMin_BeforeOpen, timeSpanInMin_AfterOpen, marketOpenTime, fontColor);
 		}
 	}
 }
@@ -223,14 +223,14 @@ namespace NinjaTrader.NinjaScript.Strategies
 {
 	public partial class Strategy : NinjaTrader.Gui.NinjaScript.StrategyRenderBase
 	{
-		public Indicators.SebIndicators.BarSpeed BarSpeed(int timeRangeInMin_BeforeOpen, int timeRangeInMin_AfterOpen, TimeSpan marketOpenTime, Brush fontColor)
+		public Indicators.SebIndicators.BarSpeed BarSpeed(int timeSpanInMin_BeforeOpen, int timeSpanInMin_AfterOpen, TimeSpan marketOpenTime, Brush fontColor)
 		{
-			return indicator.BarSpeed(Input, timeRangeInMin_BeforeOpen, timeRangeInMin_AfterOpen, marketOpenTime, fontColor);
+			return indicator.BarSpeed(Input, timeSpanInMin_BeforeOpen, timeSpanInMin_AfterOpen, marketOpenTime, fontColor);
 		}
 
-		public Indicators.SebIndicators.BarSpeed BarSpeed(ISeries<double> input , int timeRangeInMin_BeforeOpen, int timeRangeInMin_AfterOpen, TimeSpan marketOpenTime, Brush fontColor)
+		public Indicators.SebIndicators.BarSpeed BarSpeed(ISeries<double> input , int timeSpanInMin_BeforeOpen, int timeSpanInMin_AfterOpen, TimeSpan marketOpenTime, Brush fontColor)
 		{
-			return indicator.BarSpeed(input, timeRangeInMin_BeforeOpen, timeRangeInMin_AfterOpen, marketOpenTime, fontColor);
+			return indicator.BarSpeed(input, timeSpanInMin_BeforeOpen, timeSpanInMin_AfterOpen, marketOpenTime, fontColor);
 		}
 	}
 }

@@ -55,12 +55,12 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 			{
 				if(DisplayInTicks) 
 				{
-					Value[0] = ATR(Period)[1] / TickSize;
+					Value[0] = ATR(Period)[0] / TickSize;
 					//Value[0] = Instrument.MasterInstrument.RoundToTickSize(ATR(Period)[0]) / TickSize;
 				}
 				else
 				{
-					Value[0] = ATR(Period)[1];
+					Value[0] = ATR(Period)[0];
 				}
 //				Print("ATR Built-in= "+ ATR(Period)[0]);
 //				Print("ATR Custom = "+ Value[0]);

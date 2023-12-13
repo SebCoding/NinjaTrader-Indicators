@@ -19,128 +19,182 @@ using NinjaTrader.Data;
 using NinjaTrader.NinjaScript;
 using NinjaTrader.Core.FloatingPoint;
 using NinjaTrader.NinjaScript.DrawingTools;
+using NinjaTrader.NinjaScript.Indicators;
 #endregion
 
 //This namespace holds Indicators in this folder and is required. Do not change it. 
 namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 {
-	public class MyRisk : Indicator
-	{
-		protected override void OnStateChange()
-		{
-			if (State == State.SetDefaults)
-			{
-				Description									= @"Enter the description for your new custom Indicator here.";
-				Name										= "MyRisk";
-				Calculate									= Calculate.OnPriceChange;
-				IsOverlay									= false;
-				DisplayInDataBox							= true;
-				DrawOnPricePanel							= true;
-				DrawHorizontalGridLines						= true;
-				DrawVerticalGridLines						= true;
-				PaintPriceMarkers							= true;
-				ScaleJustification							= NinjaTrader.Gui.Chart.ScaleJustification.Right;
-				//Disable this property if your indicator requires custom values that cumulate with each new market data event. 
-				//See Help Guide for additional information.
-				IsSuspendedWhileInactive					= true;
-				
-				NbContracts = 1;
-				AddPlot(Brushes.DarkRed, "Ticks");
-				AddPlot(Brushes.DarkRed, "Amount");
-			}
-			else if (State == State.Configure)
-			{
-			}
-		}
+    public class MyBarSize : Indicator
+    {
+        protected override void OnStateChange()
+        {
+            SolidColorBrush avgColor;
 
-		protected override void OnBarUpdate()
-		{
-			double tickValue = TickSize * Instrument.MasterInstrument.PointValue;
-			double barSizeInPoint = High[0]-Low[0];
-			
-			Ticks[0] = Convert.ToInt32(barSizeInPoint/ TickSize) + 2; 
-			Amount[0] = Ticks[0] * tickValue * NbContracts;
-		}
+            if (State == State.SetDefaults)
+            {
+                Description = @"Enter the description for your new custom Indicator here.";
+                Name = "MyBarSize";
+                Calculate = Calculate.OnPriceChange;
+                IsOverlay = false;
+                DisplayInDataBox = true;
+                DrawOnPricePanel = false;
+                DrawHorizontalGridLines = false;
+                DrawVerticalGridLines = false;
+                PaintPriceMarkers = false;
+                ScaleJustification = NinjaTrader.Gui.Chart.ScaleJustification.Right;
+                //Disable this property if your indicator requires custom values that cumulate with each new market data event. 
+                //See Help Guide for additional information.
+                IsSuspendedWhileInactive = true;
+                MaximumBarsLookBack = MaximumBarsLookBack.Infinite;
 
-		#region Properties
-		
-		[NinjaScriptProperty]
-		[Range(1, int.MaxValue)]
-		[Display(Name="NbContracts", Description="Number of contracts traded", Order=1, GroupName="Parameters")]
-		public int NbContracts
-		{ get; set; }
+                //Parameters
+                IncludeAverages = false;
+                AveragePeriod = 21;
 
-		[Browsable(false)]
-		[XmlIgnore]
-		public Series<double> Ticks
-		{
-			get { return Values[0]; }
-		}
+                AddPlot(Brushes.Orange, "Ticks");
+                AddPlot(Brushes.Orange, "Points");
 
-		[Browsable(false)]
-		[XmlIgnore]
-		public Series<double> Amount
-		{
-			get { return Values[1]; }
-		}
-		#endregion
+                avgColor = IncludeAverages ? Brushes.Orange : Brushes.Transparent;
+                AddPlot(new Stroke(avgColor, 1), PlotStyle.Line, "AvgTicks");
+                AddPlot(new Stroke(avgColor, 1), PlotStyle.Line, "AvgPoints");
 
-	}
+            }
+            else if (State == State.Configure)
+            {
+                avgColor = IncludeAverages ? Brushes.Orange : Brushes.Transparent;
+                Plots[2].Brush = avgColor;
+                Plots[3].Brush = avgColor;
+            }
+        }
+
+        protected override void OnBarUpdate()
+        {
+            Ticks[0] = Convert.ToInt32(Instrument.MasterInstrument.RoundToTickSize(High[0] - Low[0]) / TickSize);
+            Points[0] = Instrument.MasterInstrument.RoundToTickSize(High[0] - Low[0]);
+
+            if (IncludeAverages)
+            {
+                // Do not calculate averages if we don't have enough bars
+                if (CurrentBar < AveragePeriod)
+                    return;
+
+                // Calculate average size for the last AveragePeriod bars
+                //Print("CurrentBar: " + CurrentBar);
+                double sum = 0;
+                double sumTicks = 0;
+                for (int barsAgo = 0; barsAgo < AveragePeriod; barsAgo++)
+                {
+                    sum = sum + Points[barsAgo];
+                    sumTicks = sumTicks + Ticks[barsAgo];
+                }
+
+                double avgPoints = sum / AveragePeriod;
+                double avgTicks = sumTicks / AveragePeriod;
+                AvgTicks[0] = Math.Round(avgTicks, 1);
+                AvgPoints[0] = Math.Round(avgPoints, 1);
+            }
+        }
+
+        #region Properties
+
+        [NinjaScriptProperty]
+        [Range(1, int.MaxValue)]
+        [Display(Name = "AveragePeriod", Description = "Period used to calculate average", Order = 1, GroupName = "Parameters")]
+        public int AveragePeriod
+        { get; set; }
+
+        [NinjaScriptProperty]
+        [Display(Name = "IncludeAverages", Order = 1, GroupName = "Parameters")]
+        public bool IncludeAverages
+        { get; set; }
+
+        [Browsable(false)]
+        [XmlIgnore]
+        public Series<double> Ticks
+        {
+            get { return Values[0]; }
+        }
+
+        [Browsable(false)]
+        [XmlIgnore]
+        public Series<double> Points
+        {
+            get { return Values[1]; }
+        }
+
+        [Browsable(false)]
+        [XmlIgnore]
+        public Series<double> AvgTicks
+        {
+            get { return Values[2]; }
+        }
+
+        [Browsable(false)]
+        [XmlIgnore]
+        public Series<double> AvgPoints
+        {
+            get { return Values[3]; }
+        }
+
+        #endregion
+
+    }
 }
 
 #region NinjaScript generated code. Neither change nor remove.
 
 namespace NinjaTrader.NinjaScript.Indicators
 {
-	public partial class Indicator : NinjaTrader.Gui.NinjaScript.IndicatorRenderBase
-	{
-		private SebIndicators.MyRisk[] cacheMyRisk;
-		public SebIndicators.MyRisk MyRisk(int nbContracts)
-		{
-			return MyRisk(Input, nbContracts);
-		}
+    public partial class Indicator : NinjaTrader.Gui.NinjaScript.IndicatorRenderBase
+    {
+        private SebIndicators.MyBarSize[] cacheMyBarSize;
+        public SebIndicators.MyBarSize MyBarSize(int averagePeriod, bool includeAverages)
+        {
+            return MyBarSize(Input, averagePeriod, includeAverages);
+        }
 
-		public SebIndicators.MyRisk MyRisk(ISeries<double> input, int nbContracts)
-		{
-			if (cacheMyRisk != null)
-				for (int idx = 0; idx < cacheMyRisk.Length; idx++)
-					if (cacheMyRisk[idx] != null && cacheMyRisk[idx].NbContracts == nbContracts && cacheMyRisk[idx].EqualsInput(input))
-						return cacheMyRisk[idx];
-			return CacheIndicator<SebIndicators.MyRisk>(new SebIndicators.MyRisk(){ NbContracts = nbContracts }, input, ref cacheMyRisk);
-		}
-	}
+        public SebIndicators.MyBarSize MyBarSize(ISeries<double> input, int averagePeriod, bool includeAverages)
+        {
+            if (cacheMyBarSize != null)
+                for (int idx = 0; idx < cacheMyBarSize.Length; idx++)
+                    if (cacheMyBarSize[idx] != null && cacheMyBarSize[idx].AveragePeriod == averagePeriod && cacheMyBarSize[idx].IncludeAverages == includeAverages && cacheMyBarSize[idx].EqualsInput(input))
+                        return cacheMyBarSize[idx];
+            return CacheIndicator<SebIndicators.MyBarSize>(new SebIndicators.MyBarSize() { AveragePeriod = averagePeriod, IncludeAverages = includeAverages }, input, ref cacheMyBarSize);
+        }
+    }
 }
 
 namespace NinjaTrader.NinjaScript.MarketAnalyzerColumns
 {
-	public partial class MarketAnalyzerColumn : MarketAnalyzerColumnBase
-	{
-		public Indicators.SebIndicators.MyRisk MyRisk(int nbContracts)
-		{
-			return indicator.MyRisk(Input, nbContracts);
-		}
+    public partial class MarketAnalyzerColumn : MarketAnalyzerColumnBase
+    {
+        public Indicators.SebIndicators.MyBarSize MyBarSize(int averagePeriod, bool includeAverages)
+        {
+            return indicator.MyBarSize(Input, averagePeriod, includeAverages);
+        }
 
-		public Indicators.SebIndicators.MyRisk MyRisk(ISeries<double> input , int nbContracts)
-		{
-			return indicator.MyRisk(input, nbContracts);
-		}
-	}
+        public Indicators.SebIndicators.MyBarSize MyBarSize(ISeries<double> input, int averagePeriod, bool includeAverages)
+        {
+            return indicator.MyBarSize(input, averagePeriod, includeAverages);
+        }
+    }
 }
 
 namespace NinjaTrader.NinjaScript.Strategies
 {
-	public partial class Strategy : NinjaTrader.Gui.NinjaScript.StrategyRenderBase
-	{
-		public Indicators.SebIndicators.MyRisk MyRisk(int nbContracts)
-		{
-			return indicator.MyRisk(Input, nbContracts);
-		}
+    public partial class Strategy : NinjaTrader.Gui.NinjaScript.StrategyRenderBase
+    {
+        public Indicators.SebIndicators.MyBarSize MyBarSize(int averagePeriod, bool includeAverages)
+        {
+            return indicator.MyBarSize(Input, averagePeriod, includeAverages);
+        }
 
-		public Indicators.SebIndicators.MyRisk MyRisk(ISeries<double> input , int nbContracts)
-		{
-			return indicator.MyRisk(input, nbContracts);
-		}
-	}
+        public Indicators.SebIndicators.MyBarSize MyBarSize(ISeries<double> input, int averagePeriod, bool includeAverages)
+        {
+            return indicator.MyBarSize(input, averagePeriod, includeAverages);
+        }
+    }
 }
 
 #endregion

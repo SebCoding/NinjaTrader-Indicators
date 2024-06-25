@@ -31,7 +31,7 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 			if (State == State.SetDefaults)
 			{
 				Description									= @"Enter the description for your new custom Indicator here.";
-				Name										= "MyRisk";
+				Name										= "Risk";
 				Calculate									= Calculate.OnPriceChange;
 				IsOverlay									= false;
 				DisplayInDataBox							= true;
@@ -46,8 +46,8 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 				TicksToAdd                                  = 2;
 				
 				//NbContracts = 1;
-				AddPlot(Brushes.DarkRed, "Ticks");
-				AddPlot(Brushes.DarkRed, "Points");
+				AddPlot(Brushes.DarkRed, "RiskTicks");
+				AddPlot(Brushes.DarkRed, "RiskPoints");
 			}
 			else if (State == State.Configure)
 			{
@@ -59,8 +59,8 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 			double tickValue = TickSize * Instrument.MasterInstrument.PointValue;
 			double barSizeInPoint = High[0]-Low[0];
 			
-			Ticks[0] = Convert.ToInt32(barSizeInPoint/ TickSize) + TicksToAdd; 
-			Points[0] = Instrument.MasterInstrument.RoundToTickSize((High[0]+TickSize)- (Low[0]-TickSize));
+			RiskTicks[0] = Convert.ToInt32(barSizeInPoint/ TickSize) + TicksToAdd; 
+			RiskPoints[0] = Instrument.MasterInstrument.RoundToTickSize((High[0]+TickSize)- (Low[0]-TickSize));
 		}
 
 		#region Properties
@@ -78,14 +78,14 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 
 		[Browsable(false)]
 		[XmlIgnore]
-		public Series<double> Ticks
+		public Series<double> RiskTicks
 		{
 			get { return Values[0]; }
 		}
 
 		[Browsable(false)]
 		[XmlIgnore]
-		public Series<double> Points
+		public Series<double> RiskPoints
 		{
 			get { return Values[1]; }
 		}

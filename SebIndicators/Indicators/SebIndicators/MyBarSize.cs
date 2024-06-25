@@ -33,14 +33,14 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 			if (State == State.SetDefaults)
 			{
 				Description									= @"Enter the description for your new custom Indicator here.";
-				Name										= "MyBarSize";
+				Name										= "BarSize";
 				Calculate									= Calculate.OnPriceChange;
 				IsOverlay									= false;
 				DisplayInDataBox							= true;
-				DrawOnPricePanel							= false;
-				DrawHorizontalGridLines						= false;
-				DrawVerticalGridLines						= false;
-				PaintPriceMarkers							= false;
+				DrawOnPricePanel							= true;
+				DrawHorizontalGridLines						= true;
+				DrawVerticalGridLines						= true;
+				PaintPriceMarkers							= true;
 				ScaleJustification							= NinjaTrader.Gui.Chart.ScaleJustification.Right;
 				//Disable this property if your indicator requires custom values that cumulate with each new market data event. 
 				//See Help Guide for additional information.

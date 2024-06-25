@@ -67,8 +67,8 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 			DateTime MarketClose = new DateTime(currentBarDateTime.Year, currentBarDateTime.Month, currentBarDateTime.Day, 0, 0 ,0) + MarketCloseTime;
 			//Print("MarketOpenTime (Param): " + MarketOpenTime);
 			//Print("MarketOpen: " + MarketOpen.ToString("dddd, dd MMMM yyyy HH:mm:ss"));
-			//Print("InvertOpeningHours: "+InvertOpeningHours);
 
+			//Print("InvertOpeningHours: "+InvertOpeningHours);
 		
 			bool MarketIsOpen;
 			int TimeRangeInMinutes;
@@ -96,7 +96,6 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 				return;
 			
 			//Print("TimeRangeInMinutes: " + TimeRangeInMinutes);
-
 			
 			// Why is this here? seems logically invalid. Whgy are we comparing bar index with minutes?
 //			if(CurrentBar < TimeRangeInMinutes)
@@ -167,7 +166,6 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 		[Range(1, 1400)]
 		[Display(Name="Time Span In Minutes (within opening hours)", Description="Time span (in minutes) used to calculate speed.", Order=4, GroupName="Parameters")]
 		public int TimeSpanInMin_Open
-<<<<<<< HEAD:SebIndicators/Indicators/SebIndicators/BarSpeed.cs
 		{ get; set; }
 		
 		[NinjaScriptProperty]
@@ -181,21 +179,6 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 		public bool InvertOpeningHours
 		{ get; set; }
 		
-=======
-		{ get; set; }
-		
-		[NinjaScriptProperty]
-		[Range(1, 1440)]
-		[Display(Name="Time Span In Minutes (outside opening hours)", Description="Time span (in minutes) used to calculate speed.", Order=5, GroupName="Parameters")]
-		public int TimeSpanInMin_Closed
-		{ get; set; }
-		
-		[NinjaScriptProperty]
-		[Display(Name="InvertOpeningHours", Description="Invert Opening Hours", Order=6, GroupName="Parameters")]
-		public bool InvertOpeningHours
-		{ get; set; }
-		
->>>>>>> 06edbd9f31396a7c48c283f1188015347d4a07a2:BarSpeed/Indicators/SebIndicators/BarSpeed.cs
 		
 		// XmlSerializer does not support TimeSpan, so use this property for 
 		// serialization instead.

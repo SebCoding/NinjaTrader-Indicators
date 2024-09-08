@@ -20,6 +20,7 @@ using NinjaTrader.Data;
 using NinjaTrader.NinjaScript;
 using NinjaTrader.Core.FloatingPoint;
 using NinjaTrader.NinjaScript.DrawingTools;
+using NinjaTrader.Gui.NinjaScript.Wizard;
 #endregion
 
 //This namespace holds Indicators in this folder and is required. Do not change it. 
@@ -44,10 +45,14 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 				//Disable this property if your indicator requires custom values that cumulate with each new market data event. 
 				//See Help Guide for additional information.
 				IsSuspendedWhileInactive					= true;
-				
+
 				//User defined parameters
-				FontColor									= Brushes.DodgerBlue;
-				MarketOpenTime                              = new TimeSpan(9, 15, 00);
+				FontSize                                    = 12;
+                FontColor									= Brushes.DodgerBlue;
+				textPosition                                = TextPosition.TopRight;
+				X_Offset                                    = 0;
+				Y_Offset                                    = 0;
+                MarketOpenTime                              = new TimeSpan(9, 15, 00);
 				MarketCloseTime                             = new TimeSpan(17, 00, 00);
 				TimeSpanInMin_Open							= 10;
 				TimeSpanInMin_Closed						= 60;
@@ -97,11 +102,8 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 			
 			//Print("TimeRangeInMinutes: " + TimeRangeInMinutes);
 			
-			// Why is this here? seems logically invalid. Whgy are we comparing bar index with minutes?
-//			if(CurrentBar < TimeRangeInMinutes)
-//				return;
-			
-			NinjaTrader.Gui.Tools.SimpleFont myFont = new NinjaTrader.Gui.Tools.SimpleFont("Consolas", 16) { Size = 12, Bold = false };
+			NinjaTrader.Gui.Tools.SimpleFont myFont = new NinjaTrader.Gui.Tools.SimpleFont( "Consolas", FontSize);
+			//myFont.Bold = false;
 			
 			double nbSecs = TimeRangeInMinutes * 60;
 			double nbBars = (CurrentBar - Bars.GetBar(Time[0].AddMinutes(-TimeRangeInMinutes))); 
@@ -127,55 +129,112 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 
 
 			//Draw.TextFixed(this, "BarSpeed0", "Time Now: " + Time[1] + "\nTime - 15M: "+ Time[1].AddSeconds(-nbSecs), TextPosition.TopRight, FontColor, myFont, null, null, 100);
+			string message = "";
+			string header = $"BAR SPEED [last {TimeRangeInMinutes}m]";
+			int padding = header.Length + Math.Abs(X_Offset);
 
-			string message = "BAR SPEED [last " + TimeRangeInMinutes + "m]\n";
-			if(barDuration > 0)
+            // If we need to move the text down
+            if (Y_Offset > 0)
 			{
-				message += "1 bar = " + barDurationStr + "\n";
-				message += "1 min = "+ bpm + " bar" + ((bpm >= 2) ? "s": "");
+				for (int i = 0; i < Y_Offset; i++)
+					message += "\n";
+			}
+			
+			message += AddXTextOffset(header, padding) + "\n";
+			if (barDuration > 0)
+			{
+				message += AddXTextOffset($"1 bar = {barDurationStr}", padding) + "\n";
+				string plural = ((bpm >= 2) ? "s" : "");
+                message += AddXTextOffset($"1 min = {bpm} bar{plural}", padding) + "\n";
 			}
 			else
 			{
-				message += "Interval does not contain enough bars";
+				message += AddXTextOffset("Interval does not contain enough bars", padding) + "\n";
 			}
-			Draw.TextFixed(this, "BarSpeed", message, TextPosition.TopRight, FontColor, myFont, null, null, 100);
+
+            // If we need to move the text up
+            if (Y_Offset < 0)
+            {
+				int nb = Y_Offset * -1;
+                for (int i = 0; i < nb; i++)
+                    message += "\n";
+            }
+
+            Draw.TextFixed(this, "BarSpeed", message, textPosition, FontColor, myFont, null, null, 100);
 		}
-		
-		
-		#region Properties
-		
-		[NinjaScriptProperty]
+
+		public string AddXTextOffset (string txt, int padding)
+		{
+			string tmp = txt;
+			if (X_Offset < 0)
+			{
+				tmp = tmp.PadRight(padding, ' ') + ".";
+            }
+			else if (X_Offset > 0)
+				tmp = tmp.PadLeft(padding, ' ');
+            return tmp;
+		}
+
+        #region Properties
+
+        [NinjaScriptProperty]
 		[XmlIgnore]
-		[Display(Name="FontColor", Description="Font Color", Order=1, GroupName="Parameters")]
+		[Display(Name = "FontSize", Description = "Font Size", Order = 1, GroupName = "Parameters")]
+        [Range(6, 36)]
+        public int FontSize
+        { get; set; }
+
+        [NinjaScriptProperty]
+		[XmlIgnore]
+		[Display(Name="FontColor", Description="Font Color", Order=2, GroupName="Parameters")]
 		public Brush FontColor
 		{ get; set; }
-		
+
 		[NinjaScriptProperty]
+		[Display(Name="Text Postion", Description ="Where to Display the Text on the Chart", Order =3, GroupName ="Parameters")]
+		public TextPosition textPosition 
+		{ get; set; }
+
+        [NinjaScriptProperty]
+        [XmlIgnore]
+        [Display(Name = "X Offset (+/- values to move left or right)", Description = "X Offset", Order = 4, GroupName = "Parameters")]
+        [Range(-300, 300)]
+        public int X_Offset
+        { get; set; }
+
+        [NinjaScriptProperty]
+        [XmlIgnore]
+        [Display(Name = "Y Offset (+/- values to move up or down)", Description = "Y Offset", Order = 5, GroupName = "Parameters")]
+        [Range(-80, 80)]
+        public int Y_Offset
+        { get; set; }
+
+        [NinjaScriptProperty]
 		[XmlIgnore]
-		[Display(Name="Market Open Time", Description="Market open time on local computer.", Order=2, GroupName="Parameters")]
+		[Display(Name="Market Open Time", Description="Market open time on local computer.", Order=6, GroupName="Parameters")]
 		public TimeSpan MarketOpenTime
 		{ get; set; }
 		
 		[NinjaScriptProperty]
 		[XmlIgnore]
-		[Display(Name="Market Close Time", Description="Market close time on local computer.", Order=3, GroupName="Parameters")]
+		[Display(Name="Market Close Time", Description="Market close time on local computer.", Order=7, GroupName="Parameters")]
 		public TimeSpan MarketCloseTime
 		{ get; set; }
 
 		[NinjaScriptProperty]
 		[Range(1, 1400)]
-		[Display(Name="Time Span In Minutes (within opening hours)", Description="Time span (in minutes) used to calculate speed.", Order=4, GroupName="Parameters")]
+		[Display(Name="Time Span In Minutes (within opening hours)", Description="Time span (in minutes) used to calculate speed.", Order=8, GroupName="Parameters")]
 		public int TimeSpanInMin_Open
 		{ get; set; }
 		
 		[NinjaScriptProperty]
 		[Range(1, 1440)]
-		[Display(Name="Time Span In Minutes (outside opening hours)", Description="Time span (in minutes) used to calculate speed.", Order=5, GroupName="Parameters")]
+		[Display(Name="Time Span In Minutes (outside opening hours)", Description="Time span (in minutes) used to calculate speed.", Order=9, GroupName="Parameters")]
 		public int TimeSpanInMin_Closed
 		{ get; set; }
 		
 		[NinjaScriptProperty]
-		[Display(Name="InvertOpeningHours", Description="Invert Opening Hours", Order=6, GroupName="Parameters")]
+		[Display(Name="InvertOpeningHours", Description="Invert Opening Hours", Order=10, GroupName="Parameters")]
 		public bool InvertOpeningHours
 		{ get; set; }
 		
@@ -232,18 +291,18 @@ namespace NinjaTrader.NinjaScript.Indicators
 	public partial class Indicator : NinjaTrader.Gui.NinjaScript.IndicatorRenderBase
 	{
 		private SebIndicators.BarSpeed[] cacheBarSpeed;
-		public SebIndicators.BarSpeed BarSpeed(Brush fontColor, TimeSpan marketOpenTime, TimeSpan marketCloseTime, int timeSpanInMin_Open, int timeSpanInMin_Closed, bool invertOpeningHours)
+		public SebIndicators.BarSpeed BarSpeed(int fontSize, Brush fontColor, TextPosition textPosition, int x_Offset, int y_Offset, TimeSpan marketOpenTime, TimeSpan marketCloseTime, int timeSpanInMin_Open, int timeSpanInMin_Closed, bool invertOpeningHours)
 		{
-			return BarSpeed(Input, fontColor, marketOpenTime, marketCloseTime, timeSpanInMin_Open, timeSpanInMin_Closed, invertOpeningHours);
+			return BarSpeed(Input, fontSize, fontColor, textPosition, x_Offset, y_Offset, marketOpenTime, marketCloseTime, timeSpanInMin_Open, timeSpanInMin_Closed, invertOpeningHours);
 		}
 
-		public SebIndicators.BarSpeed BarSpeed(ISeries<double> input, Brush fontColor, TimeSpan marketOpenTime, TimeSpan marketCloseTime, int timeSpanInMin_Open, int timeSpanInMin_Closed, bool invertOpeningHours)
+		public SebIndicators.BarSpeed BarSpeed(ISeries<double> input, int fontSize, Brush fontColor, TextPosition textPosition, int x_Offset, int y_Offset, TimeSpan marketOpenTime, TimeSpan marketCloseTime, int timeSpanInMin_Open, int timeSpanInMin_Closed, bool invertOpeningHours)
 		{
 			if (cacheBarSpeed != null)
 				for (int idx = 0; idx < cacheBarSpeed.Length; idx++)
-					if (cacheBarSpeed[idx] != null && cacheBarSpeed[idx].FontColor == fontColor && cacheBarSpeed[idx].MarketOpenTime == marketOpenTime && cacheBarSpeed[idx].MarketCloseTime == marketCloseTime && cacheBarSpeed[idx].TimeSpanInMin_Open == timeSpanInMin_Open && cacheBarSpeed[idx].TimeSpanInMin_Closed == timeSpanInMin_Closed && cacheBarSpeed[idx].InvertOpeningHours == invertOpeningHours && cacheBarSpeed[idx].EqualsInput(input))
+					if (cacheBarSpeed[idx] != null && cacheBarSpeed[idx].FontSize == fontSize && cacheBarSpeed[idx].FontColor == fontColor && cacheBarSpeed[idx].textPosition == textPosition && cacheBarSpeed[idx].X_Offset == x_Offset && cacheBarSpeed[idx].Y_Offset == y_Offset && cacheBarSpeed[idx].MarketOpenTime == marketOpenTime && cacheBarSpeed[idx].MarketCloseTime == marketCloseTime && cacheBarSpeed[idx].TimeSpanInMin_Open == timeSpanInMin_Open && cacheBarSpeed[idx].TimeSpanInMin_Closed == timeSpanInMin_Closed && cacheBarSpeed[idx].InvertOpeningHours == invertOpeningHours && cacheBarSpeed[idx].EqualsInput(input))
 						return cacheBarSpeed[idx];
-			return CacheIndicator<SebIndicators.BarSpeed>(new SebIndicators.BarSpeed(){ FontColor = fontColor, MarketOpenTime = marketOpenTime, MarketCloseTime = marketCloseTime, TimeSpanInMin_Open = timeSpanInMin_Open, TimeSpanInMin_Closed = timeSpanInMin_Closed, InvertOpeningHours = invertOpeningHours }, input, ref cacheBarSpeed);
+			return CacheIndicator<SebIndicators.BarSpeed>(new SebIndicators.BarSpeed(){ FontSize = fontSize, FontColor = fontColor, textPosition = textPosition, X_Offset = x_Offset, Y_Offset = y_Offset, MarketOpenTime = marketOpenTime, MarketCloseTime = marketCloseTime, TimeSpanInMin_Open = timeSpanInMin_Open, TimeSpanInMin_Closed = timeSpanInMin_Closed, InvertOpeningHours = invertOpeningHours }, input, ref cacheBarSpeed);
 		}
 	}
 }
@@ -252,14 +311,14 @@ namespace NinjaTrader.NinjaScript.MarketAnalyzerColumns
 {
 	public partial class MarketAnalyzerColumn : MarketAnalyzerColumnBase
 	{
-		public Indicators.SebIndicators.BarSpeed BarSpeed(Brush fontColor, TimeSpan marketOpenTime, TimeSpan marketCloseTime, int timeSpanInMin_Open, int timeSpanInMin_Closed, bool invertOpeningHours)
+		public Indicators.SebIndicators.BarSpeed BarSpeed(int fontSize, Brush fontColor, TextPosition textPosition, int x_Offset, int y_Offset, TimeSpan marketOpenTime, TimeSpan marketCloseTime, int timeSpanInMin_Open, int timeSpanInMin_Closed, bool invertOpeningHours)
 		{
-			return indicator.BarSpeed(Input, fontColor, marketOpenTime, marketCloseTime, timeSpanInMin_Open, timeSpanInMin_Closed, invertOpeningHours);
+			return indicator.BarSpeed(Input, fontSize, fontColor, textPosition, x_Offset, y_Offset, marketOpenTime, marketCloseTime, timeSpanInMin_Open, timeSpanInMin_Closed, invertOpeningHours);
 		}
 
-		public Indicators.SebIndicators.BarSpeed BarSpeed(ISeries<double> input , Brush fontColor, TimeSpan marketOpenTime, TimeSpan marketCloseTime, int timeSpanInMin_Open, int timeSpanInMin_Closed, bool invertOpeningHours)
+		public Indicators.SebIndicators.BarSpeed BarSpeed(ISeries<double> input , int fontSize, Brush fontColor, TextPosition textPosition, int x_Offset, int y_Offset, TimeSpan marketOpenTime, TimeSpan marketCloseTime, int timeSpanInMin_Open, int timeSpanInMin_Closed, bool invertOpeningHours)
 		{
-			return indicator.BarSpeed(input, fontColor, marketOpenTime, marketCloseTime, timeSpanInMin_Open, timeSpanInMin_Closed, invertOpeningHours);
+			return indicator.BarSpeed(input, fontSize, fontColor, textPosition, x_Offset, y_Offset, marketOpenTime, marketCloseTime, timeSpanInMin_Open, timeSpanInMin_Closed, invertOpeningHours);
 		}
 	}
 }
@@ -268,14 +327,14 @@ namespace NinjaTrader.NinjaScript.Strategies
 {
 	public partial class Strategy : NinjaTrader.Gui.NinjaScript.StrategyRenderBase
 	{
-		public Indicators.SebIndicators.BarSpeed BarSpeed(Brush fontColor, TimeSpan marketOpenTime, TimeSpan marketCloseTime, int timeSpanInMin_Open, int timeSpanInMin_Closed, bool invertOpeningHours)
+		public Indicators.SebIndicators.BarSpeed BarSpeed(int fontSize, Brush fontColor, TextPosition textPosition, int x_Offset, int y_Offset, TimeSpan marketOpenTime, TimeSpan marketCloseTime, int timeSpanInMin_Open, int timeSpanInMin_Closed, bool invertOpeningHours)
 		{
-			return indicator.BarSpeed(Input, fontColor, marketOpenTime, marketCloseTime, timeSpanInMin_Open, timeSpanInMin_Closed, invertOpeningHours);
+			return indicator.BarSpeed(Input, fontSize, fontColor, textPosition, x_Offset, y_Offset, marketOpenTime, marketCloseTime, timeSpanInMin_Open, timeSpanInMin_Closed, invertOpeningHours);
 		}
 
-		public Indicators.SebIndicators.BarSpeed BarSpeed(ISeries<double> input , Brush fontColor, TimeSpan marketOpenTime, TimeSpan marketCloseTime, int timeSpanInMin_Open, int timeSpanInMin_Closed, bool invertOpeningHours)
+		public Indicators.SebIndicators.BarSpeed BarSpeed(ISeries<double> input , int fontSize, Brush fontColor, TextPosition textPosition, int x_Offset, int y_Offset, TimeSpan marketOpenTime, TimeSpan marketCloseTime, int timeSpanInMin_Open, int timeSpanInMin_Closed, bool invertOpeningHours)
 		{
-			return indicator.BarSpeed(input, fontColor, marketOpenTime, marketCloseTime, timeSpanInMin_Open, timeSpanInMin_Closed, invertOpeningHours);
+			return indicator.BarSpeed(input, fontSize, fontColor, textPosition, x_Offset, y_Offset, marketOpenTime, marketCloseTime, timeSpanInMin_Open, timeSpanInMin_Closed, invertOpeningHours);
 		}
 	}
 }

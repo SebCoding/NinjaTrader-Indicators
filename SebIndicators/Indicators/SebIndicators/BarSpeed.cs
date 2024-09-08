@@ -38,10 +38,11 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 				IsOverlay									= true;
 				DisplayInDataBox							= false;
 				DrawOnPricePanel							= true;
-				DrawHorizontalGridLines						= true;
-				DrawVerticalGridLines						= true;
-				PaintPriceMarkers							= true;
-				ScaleJustification							= NinjaTrader.Gui.Chart.ScaleJustification.Right;
+				DrawHorizontalGridLines						= false;
+				DrawVerticalGridLines						= false;
+				PaintPriceMarkers							= false;
+                IsAutoScale									= false;
+                ScaleJustification							= NinjaTrader.Gui.Chart.ScaleJustification.Right;
 				//Disable this property if your indicator requires custom values that cumulate with each new market data event. 
 				//See Help Guide for additional information.
 				IsSuspendedWhileInactive					= true;

@@ -35,10 +35,10 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 		{
 			if (State == State.SetDefaults)
 			{
-				Description					= "ATR customized by Seb";
+				Description					= "ATR Customized by Seb";
 				Name						= "MyATR";
 				IsSuspendedWhileInactive	= true;
-				Period						= 21;
+				Period						= 14;
 
 				AddPlot(Brushes.DarkCyan, NinjaTrader.Custom.Resource.NinjaScriptIndicatorNameATR);
 			}

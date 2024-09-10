@@ -67,7 +67,7 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 		protected void calculateBasedOnTimeSpan()
 		{
             DateTime currentBarDateTime = Bars.GetTime(CurrentBar);
-            //Print("CurrentBar #" + CurrentBar + " time stamp is " + currentBarDateTime.ToString("dddd, dd MMMM yyyy HH:mm:ss"));
+            //Print($"CurrentBar: {CurrentBar}, {currentBarDateTime.ToString()}");
 
             DateTime MarketOpen = new DateTime(currentBarDateTime.Year, currentBarDateTime.Month, currentBarDateTime.Day, 0, 0, 0) + MarketOpenTime;
             DateTime MarketClose = new DateTime(currentBarDateTime.Year, currentBarDateTime.Month, currentBarDateTime.Day, 0, 0, 0) + MarketCloseTime;
@@ -105,8 +105,32 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 
             //Print($"CurrentBar: {CurrentBar}");
 
+            // The barIndexToCalculate is different OnBarClose because the first bar that is not closed yet is part of the Count, but not in the series
+            int barIndexToCalculate = Count - 1;
+            if (Calculate == Calculate.OnBarClose)
+            {
+                barIndexToCalculate = barIndexToCalculate - 1;
+            }
+
+            // We only need to calculate once we are on the last bar closed
+            // There is no need to calculate uselessly on every past bars of the chart
+            if (CurrentBar < barIndexToCalculate)
+                return;
+
+
             double nbSecs = TimeRangeInMinutes * 60;
-            double nbBars = (CurrentBar - Bars.GetBar(Time[0].AddMinutes(-TimeRangeInMinutes)));
+            int nbBars = (CurrentBar - Bars.GetBar(Time[0].AddSeconds(-nbSecs)));
+
+            //Print($"\nCurrentBar: {CurrentBar} [{currentBarDateTime.ToString()}], barIndexToCalculate: {barIndexToCalculate}, Count: {Count}");
+
+
+            //Print("TimeRangeInMinutes: " + TimeRangeInMinutes);
+
+            //Print($"CurrentBar: {CurrentBar}, {currentBarDateTime.ToString()}, NbBarSpan: {nbBarSpan}");
+
+            //Print($"Time[0]: {Time[0].ToString()}, nbBars: {nbBars}");
+            //Print($"Time[{nbBars - 1}]: {Time[nbBars - 1].ToString()}");
+
 
             //Print($"nbBars: {nbBars}");
 
@@ -141,7 +165,7 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
         protected void calculateBasedOnBarSpan()
         {
             DateTime currentBarDateTime = Bars.GetTime(CurrentBar);
-            //Print("CurrentBar #" + CurrentBar + " time stamp is " + currentBarDateTime.ToString("dddd, dd MMMM yyyy HH:mm:ss"));
+            //Print($"CurrentBar: {CurrentBar}, {currentBarDateTime.ToString()}");
 
             DateTime MarketOpen = new DateTime(currentBarDateTime.Year, currentBarDateTime.Month, currentBarDateTime.Day, 0, 0, 0) + MarketOpenTime;
             DateTime MarketClose = new DateTime(currentBarDateTime.Year, currentBarDateTime.Month, currentBarDateTime.Day, 0, 0, 0) + MarketCloseTime;
@@ -172,33 +196,41 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
                     nbBarSpan = SpanDuringOpen;
             }
 
-            if (CurrentBar < nbBarSpan)
-                return;
-
-            //Print($"nbBarSpan: {nbBarSpan}, Bars.Count: {Bars.Count}, Time.Count: {Time.Count}");
-            if (nbBarSpan > Bars.Count)
+            if (nbBarSpan > Count)
             {
                 outputText = "Interval does not contain enough bars\n";
                 return;
             }
 
+            // The barIndexToCalculate is different OnBarClose because the first bar that is not closed yet is part of the Count, but not in the series
+            int barIndexToCalculate = Count - 1;
+            if (Calculate == Calculate.OnBarClose)
+            {
+                barIndexToCalculate = barIndexToCalculate - 1;
+            }
+
+            // We only need to calculate once we are on the last bar closed
+            // There is no need to calculate uselessly on every past bars of the chart
+            if (CurrentBar < barIndexToCalculate)
+                return;
+
+            //Print($"\nCurrentBar: {CurrentBar} [{currentBarDateTime.ToString()}], nbBarSpan: {nbBarSpan}, barIndexToCalculate: {barIndexToCalculate}, Count: {Count}");
+
 
             //Print("TimeRangeInMinutes: " + TimeRangeInMinutes);
 
-            //Print($"CurrentBar: {CurrentBar}");
+            //Print($"CurrentBar: {CurrentBar}, {currentBarDateTime.ToString()}, NbBarSpan: {nbBarSpan}");
 
             //Print($"Time[0]: {Time[0].ToString()}, nbBarSpan: {nbBarSpan}");
-            //Print($"Time[{nbBarSpan}]: {Time[nbBarSpan].ToString()}");
+            //Print($"Time[{nbBarSpan-1}]: {Time[nbBarSpan-1].ToString()}");
 
-            double nbSecs = Time[0].Subtract(Time[nbBarSpan]).TotalSeconds;
-
-            //Print($"nbBars: {nbBars}");
+            double nbSecs = Time[0].Subtract(Time[nbBarSpan-1]).TotalSeconds;           
 
             // Bars Per Minute (BPM)
             double bpm = Math.Round(nbBarSpan / (nbSecs*60), 2);
             double barDuration = (nbBarSpan > 0) ? Math.Round(nbSecs / nbBarSpan, 1) : 0;
 
-            //Print($"nbSecs: {nbSecs}, barDuration: {barDuration}");
+            //Print($"nbSecs: {nbSecs}, barDuration: {barDuration}s");
 
             string barDurationStr = "";
             //if (barDuration >= 3600)
@@ -236,6 +268,12 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 
         protected override void OnBarUpdate()
         {
+            if (Calculate != Calculate.OnBarClose)
+            {
+                outputText = $"BAR SPEED\nCalculation currently set to {Calculate}\nPlease set calculation to OnBarClose";
+                return;
+            }
+            
             switch (calculationType)
             {
                 case CalculationType.TimeSpan:

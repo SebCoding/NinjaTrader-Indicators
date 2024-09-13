@@ -509,7 +509,7 @@ namespace NinjaTrader.NinjaScript.Indicators
 		#region DisplayName Override
 		public override string DisplayName 
 		{
-			get { return $"{this.GetType().Name}: refreshed ({LastDataUpdateTime.ToString("dd-MMM-yyyy, HH:mm")})"; }
+			get { return $"{this.GetType().Name}(Refreshed {LastDataUpdateTime.ToString("dd-MMM-yyyy, HH:mm")})"; }
 		}
 		#endregion
 
@@ -618,11 +618,12 @@ namespace NinjaTrader.NinjaScript.Indicators
             Print($"LastUpdate: {LastDataUpdateTime.ToString()}\nNow: {DateTime.Now.ToString()}\nNextUpdate: {nextUpdate.ToString()}");
 
 
-			string xml = (XMLNewsRawData.IsNullOrEmpty()) ? "Xml[ ]" : $"Xml[{XMLNewsRawData.Substring(0, 20)}]";
+			string xml = (XMLNewsRawData.IsNullOrEmpty()) ? "Xml[ ]" : $"Xml[Content]";
 			Print(xml);
             if (XMLNewsRawData.IsNullOrEmpty() || (nextUpdate <= DateTime.Now))
 			{
 				Print($"Before GetNews");
+
 				string data = getNews();
 				if (!data.IsNullOrEmpty())
 					XMLNewsRawData = data;

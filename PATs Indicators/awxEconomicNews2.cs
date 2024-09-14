@@ -32,7 +32,7 @@
 								- Added auto-offset to user's timezone
 								- Added option to show divisor between columns
 								- Added option to show events in next XYZ minutes (not only 24 hours)
- Verion 2 [modified by Seb: seblife@pm.me} (13-sep-2024):
+ Version 2 [modified by GitHub user SebCoding: seblife@pm.me} (13-sep-2024):
                                 - Fixed bug: Indicator failing to display after max request to news server constantly being exceeded.
 												
 */

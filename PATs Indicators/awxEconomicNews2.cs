@@ -32,8 +32,8 @@
 								- Added auto-offset to user's timezone
 								- Added option to show divisor between columns
 								- Added option to show events in next XYZ minutes (not only 24 hours)
- Verion 1.3 [modified by Seb: seblife@pm.me} (13-sep-2024):
-                                - Fixed bug. Indicator failing to display after max request to news server constantly being exceeded.
+ Verion 2 [modified by Seb: seblife@pm.me} (13-sep-2024):
+                                - Fixed bug: Indicator failing to display after max request to news server constantly being exceeded.
 												
 */
 using System;
@@ -72,6 +72,7 @@ using System.Reflection;
 
 using Indicators.awxEconomicNews_namespace2;
 using System.Runtime.Remoting.Messaging;
+using System.Runtime.CompilerServices;
 
 namespace Indicators.awxEconomicNews_namespace2
 {
@@ -116,7 +117,7 @@ namespace NinjaTrader.NinjaScript.Indicators
 {
     [CategoryDefaultExpanded(false)]
     [Gui.CategoryOrder("Ignore this Section (do not update fields)", 7000001)]
-    public class awxEconomicNewsv2 : Indicator
+    public class awxEconomicNews2 : Indicator
 	{
         #region Constants
         // URL where news would be retrieved from
@@ -354,12 +355,28 @@ namespace NinjaTrader.NinjaScript.Indicators
 		private List<NewsItemLayout> _itemLayouts = null;		// A list of all the text layouts for rendering news items
 		private float _subHeadingXOffset	= 0.0f;				// The offset horizontal of the sub heading text
 		private bool Allowed_To_Run			= true;				// for general use
-		private bool needs_to_update		= false;			// for general use
-	    #endregion
-		#endregion
+		private bool needs_to_update		= false;            // for general use
+        #endregion
+        #endregion
 
-		#region semi functions
-		private bool NullOrZero(dynamic smth)				{ return (smth==null ||  smth.Count<=0); }
+        #region Public Properties that should be Private
+
+        // We made these 2 properties public to benefit from persistence through serialization.
+        // Making these properties hidden through [Browsable(false)] disables the serialization.
+        // Unfortunately, these should be hidden but now appear in the UI because they are public.
+        // We need to find another way to have these 2 properties private and still have persistence and serialization.
+
+        [NinjaScriptProperty]
+        [Display(GroupName = "Ignore this Section (do not update fields)", Name = "LastDataUpdateTime")]
+        public DateTime LastDataUpdateTime { get; set; }
+
+        [NinjaScriptProperty]
+        [Display(GroupName = "Ignore this Section (do not update fields)", Name = "XMLNewsRawData")]
+        public string XMLNewsRawData { get; set; }
+        #endregion
+
+        #region semi functions
+        private bool NullOrZero(dynamic smth)				{ return (smth==null ||  smth.Count<=0); }
 		private string Normalize_(string smth)				{ return (string.IsNullOrEmpty(smth) ? "" : smth); }
 		private string Normalize_(XmlNode xmlnd, string key){ return (xmlnd.SelectSingleNode(key) == null ? "" : xmlnd.SelectSingleNode(key).InnerText); } 
 		private string random_key(string[] strs)	{  return strs[new Random().Next(0,strs.Length) ]; }
@@ -373,18 +390,6 @@ namespace NinjaTrader.NinjaScript.Indicators
 			collection = null;
 		}
         #endregion
-
-        #region Persistent Public Properties
-        // These 2 properties need to be public to enable serialization and persistence
-        [NinjaScriptProperty]
-        [Display(GroupName = "Ignore this Section (do not update fields)", Name = "LastDataUpdateTime")]
-        public DateTime LastDataUpdateTime { get; set; }
-
-        [NinjaScriptProperty]
-        [Display(GroupName = "Ignore this Section (do not update fields)", Name = "XMLNewsRawData")]
-        public string XMLNewsRawData { get; set; }
-		#endregion
-
 
 		#region State Change Overrides
 		/// <summary>
@@ -422,7 +427,7 @@ namespace NinjaTrader.NinjaScript.Indicators
 				_errorItemColor				= System.Windows.Media.Brushes.Red;
 				//
 				_newsHeadingItemColor		= System.Windows.Media.Brushes.DodgerBlue;	
-				_newsHeadingFont	= new SimpleFont("Consolas", 16) { Bold = true };
+				_newsHeadingFont	= new SimpleFont("Consolas", 12) { Bold = true };
 				_newsItemFont		= new SimpleFont("Consolas", 12);	
 				_leftHandMargin		= 10;	
 				areaOpacity			= 80;
@@ -439,7 +444,7 @@ namespace NinjaTrader.NinjaScript.Indicators
 				_ShowIn24hr_Format	= true;
 				_ShowDayNumber		= true;
 				_timeUpcomingEventsInMinutes = 1440;
-				_dontShowOlderThan	= 1440;
+				_dontShowOlderThan	= 480;
 				_showOnlyTodayNews	= false;
 				_NewItemsOnTop		= true;
 				TableBigTitle		= "News Feed";
@@ -608,7 +613,7 @@ namespace NinjaTrader.NinjaScript.Indicators
 	    private void RefreshNewsItems()
 	    {
             string error_title = "";
-            Print("\nRefreshNewsItems()");
+            //Print("\nRefreshNewsItems:");
           
 
             //if something stuck in previous cycle
@@ -621,25 +626,25 @@ namespace NinjaTrader.NinjaScript.Indicators
 			// If it is time to refresh news from web
 			DateTime nextUpdate = LastDataUpdateTime.AddMinutes(DataRefreshInterval);
 
-            Print($"LastUpdate: {LastDataUpdateTime.ToString()}\nNow: {DateTime.Now.ToString()}\nNextUpdate: {nextUpdate.ToString()}");
+            //Print($"LastUpdate: {LastDataUpdateTime.ToString()}\nNow: {DateTime.Now.ToString()}\nNextUpdate: {nextUpdate.ToString()}");
 
 
-			string xml = (XMLNewsRawData.IsNullOrEmpty()) ? "Xml[ ]" : $"Xml[Content]";
-			Print(xml);
+//			string xml = (XMLNewsRawData.IsNullOrEmpty()) ? "Xml[ ]" : $"Xml[{XMLNewsRawData}]";
+//			Print(xml);
             if (XMLNewsRawData.IsNullOrEmpty() || (nextUpdate <= DateTime.Now))
 			{
-				Print($"Before GetNews");
+				//Print($"Before GetNews");
 
 				string data = getNews();
 				if (!data.IsNullOrEmpty())
-					XMLNewsRawData = data;
+					XMLNewsRawData = data.Replace('\n', ' ');
 
-                Print($"After GetNews");
+                //Print($"After GetNews");
 			}
-			else
-			{
-				Print("Skipped GetNews");
-			}
+			//else
+			//{
+			//	Print("Skipped GetNews");
+			//}
 
 			if (!XMLNewsRawData.IsNullOrEmpty())
 			{
@@ -864,19 +869,19 @@ namespace NinjaTrader.NinjaScript.Indicators
 {
 	public partial class Indicator : NinjaTrader.Gui.NinjaScript.IndicatorRenderBase
 	{
-		private awxEconomicNewsv2[] cacheawxEconomicNewsv2;
-		public awxEconomicNewsv2 awxEconomicNewsv2(bool _showLowImpactNews, bool _showMediumImpactNews, bool _showHighImpactNews, bool _showHolidayImpactNews, bool _showUnknownImpactNews, bool _showErrors, bool _showBigTitle, bool _showColumnsHeader, SimpleFont _newsHeadingFont, SimpleFont _newsItemFont, int _leftHandMargin, int _topMargin, int spaceBetweenColumns, bool _showColumnDivider, int spaceBetweenRows, bool _newItemsOnTop, string tableBigTitle, bool _showDayNumber, bool _showIn24hr_Format, bool _autoTimezoneOffset, double _timeZoneOffset, int dataRefreshInterval, bool _enableCountryFilter, string _countryFilter, string hide_these_columns, int _timeUpcomingEventsInMinutes, bool _showOnlyTodayNews, int _dontShowOlderThan, DateTime lastDataUpdateTime, string xMLNewsRawData)
+		private awxEconomicNews2[] cacheawxEconomicNews2;
+		public awxEconomicNews2 awxEconomicNews2(bool _showLowImpactNews, bool _showMediumImpactNews, bool _showHighImpactNews, bool _showHolidayImpactNews, bool _showUnknownImpactNews, bool _showErrors, bool _showBigTitle, bool _showColumnsHeader, SimpleFont _newsHeadingFont, SimpleFont _newsItemFont, int _leftHandMargin, int _topMargin, int spaceBetweenColumns, bool _showColumnDivider, int spaceBetweenRows, bool _newItemsOnTop, string tableBigTitle, bool _showDayNumber, bool _showIn24hr_Format, bool _autoTimezoneOffset, double _timeZoneOffset, int dataRefreshInterval, bool _enableCountryFilter, string _countryFilter, string hide_these_columns, int _timeUpcomingEventsInMinutes, bool _showOnlyTodayNews, int _dontShowOlderThan, DateTime lastDataUpdateTime, string xMLNewsRawData)
 		{
-			return awxEconomicNewsv2(Input, _showLowImpactNews, _showMediumImpactNews, _showHighImpactNews, _showHolidayImpactNews, _showUnknownImpactNews, _showErrors, _showBigTitle, _showColumnsHeader, _newsHeadingFont, _newsItemFont, _leftHandMargin, _topMargin, spaceBetweenColumns, _showColumnDivider, spaceBetweenRows, _newItemsOnTop, tableBigTitle, _showDayNumber, _showIn24hr_Format, _autoTimezoneOffset, _timeZoneOffset, dataRefreshInterval, _enableCountryFilter, _countryFilter, hide_these_columns, _timeUpcomingEventsInMinutes, _showOnlyTodayNews, _dontShowOlderThan, lastDataUpdateTime, xMLNewsRawData);
+			return awxEconomicNews2(Input, _showLowImpactNews, _showMediumImpactNews, _showHighImpactNews, _showHolidayImpactNews, _showUnknownImpactNews, _showErrors, _showBigTitle, _showColumnsHeader, _newsHeadingFont, _newsItemFont, _leftHandMargin, _topMargin, spaceBetweenColumns, _showColumnDivider, spaceBetweenRows, _newItemsOnTop, tableBigTitle, _showDayNumber, _showIn24hr_Format, _autoTimezoneOffset, _timeZoneOffset, dataRefreshInterval, _enableCountryFilter, _countryFilter, hide_these_columns, _timeUpcomingEventsInMinutes, _showOnlyTodayNews, _dontShowOlderThan, lastDataUpdateTime, xMLNewsRawData);
 		}
 
-		public awxEconomicNewsv2 awxEconomicNewsv2(ISeries<double> input, bool _showLowImpactNews, bool _showMediumImpactNews, bool _showHighImpactNews, bool _showHolidayImpactNews, bool _showUnknownImpactNews, bool _showErrors, bool _showBigTitle, bool _showColumnsHeader, SimpleFont _newsHeadingFont, SimpleFont _newsItemFont, int _leftHandMargin, int _topMargin, int spaceBetweenColumns, bool _showColumnDivider, int spaceBetweenRows, bool _newItemsOnTop, string tableBigTitle, bool _showDayNumber, bool _showIn24hr_Format, bool _autoTimezoneOffset, double _timeZoneOffset, int dataRefreshInterval, bool _enableCountryFilter, string _countryFilter, string hide_these_columns, int _timeUpcomingEventsInMinutes, bool _showOnlyTodayNews, int _dontShowOlderThan, DateTime lastDataUpdateTime, string xMLNewsRawData)
+		public awxEconomicNews2 awxEconomicNews2(ISeries<double> input, bool _showLowImpactNews, bool _showMediumImpactNews, bool _showHighImpactNews, bool _showHolidayImpactNews, bool _showUnknownImpactNews, bool _showErrors, bool _showBigTitle, bool _showColumnsHeader, SimpleFont _newsHeadingFont, SimpleFont _newsItemFont, int _leftHandMargin, int _topMargin, int spaceBetweenColumns, bool _showColumnDivider, int spaceBetweenRows, bool _newItemsOnTop, string tableBigTitle, bool _showDayNumber, bool _showIn24hr_Format, bool _autoTimezoneOffset, double _timeZoneOffset, int dataRefreshInterval, bool _enableCountryFilter, string _countryFilter, string hide_these_columns, int _timeUpcomingEventsInMinutes, bool _showOnlyTodayNews, int _dontShowOlderThan, DateTime lastDataUpdateTime, string xMLNewsRawData)
 		{
-			if (cacheawxEconomicNewsv2 != null)
-				for (int idx = 0; idx < cacheawxEconomicNewsv2.Length; idx++)
-					if (cacheawxEconomicNewsv2[idx] != null && cacheawxEconomicNewsv2[idx]._showLowImpactNews == _showLowImpactNews && cacheawxEconomicNewsv2[idx]._showMediumImpactNews == _showMediumImpactNews && cacheawxEconomicNewsv2[idx]._showHighImpactNews == _showHighImpactNews && cacheawxEconomicNewsv2[idx]._showHolidayImpactNews == _showHolidayImpactNews && cacheawxEconomicNewsv2[idx]._showUnknownImpactNews == _showUnknownImpactNews && cacheawxEconomicNewsv2[idx]._showErrors == _showErrors && cacheawxEconomicNewsv2[idx]._showBigTitle == _showBigTitle && cacheawxEconomicNewsv2[idx]._showColumnsHeader == _showColumnsHeader && cacheawxEconomicNewsv2[idx]._newsHeadingFont == _newsHeadingFont && cacheawxEconomicNewsv2[idx]._newsItemFont == _newsItemFont && cacheawxEconomicNewsv2[idx]._leftHandMargin == _leftHandMargin && cacheawxEconomicNewsv2[idx]._topMargin == _topMargin && cacheawxEconomicNewsv2[idx].SpaceBetweenColumns == spaceBetweenColumns && cacheawxEconomicNewsv2[idx]._showColumnDivider == _showColumnDivider && cacheawxEconomicNewsv2[idx].SpaceBetweenRows == spaceBetweenRows && cacheawxEconomicNewsv2[idx]._NewItemsOnTop == _newItemsOnTop && cacheawxEconomicNewsv2[idx].TableBigTitle == tableBigTitle && cacheawxEconomicNewsv2[idx]._ShowDayNumber == _showDayNumber && cacheawxEconomicNewsv2[idx]._ShowIn24hr_Format == _showIn24hr_Format && cacheawxEconomicNewsv2[idx]._AutoTimezoneOffset == _autoTimezoneOffset && cacheawxEconomicNewsv2[idx]._timeZoneOffset == _timeZoneOffset && cacheawxEconomicNewsv2[idx].DataRefreshInterval == dataRefreshInterval && cacheawxEconomicNewsv2[idx]._enableCountryFilter == _enableCountryFilter && cacheawxEconomicNewsv2[idx]._countryFilter == _countryFilter && cacheawxEconomicNewsv2[idx].hide_these_columns == hide_these_columns && cacheawxEconomicNewsv2[idx]._timeUpcomingEventsInMinutes == _timeUpcomingEventsInMinutes && cacheawxEconomicNewsv2[idx]._showOnlyTodayNews == _showOnlyTodayNews && cacheawxEconomicNewsv2[idx]._dontShowOlderThan == _dontShowOlderThan && cacheawxEconomicNewsv2[idx].LastDataUpdateTime == lastDataUpdateTime && cacheawxEconomicNewsv2[idx].XMLNewsRawData == xMLNewsRawData && cacheawxEconomicNewsv2[idx].EqualsInput(input))
-						return cacheawxEconomicNewsv2[idx];
-			return CacheIndicator<awxEconomicNewsv2>(new awxEconomicNewsv2(){ _showLowImpactNews = _showLowImpactNews, _showMediumImpactNews = _showMediumImpactNews, _showHighImpactNews = _showHighImpactNews, _showHolidayImpactNews = _showHolidayImpactNews, _showUnknownImpactNews = _showUnknownImpactNews, _showErrors = _showErrors, _showBigTitle = _showBigTitle, _showColumnsHeader = _showColumnsHeader, _newsHeadingFont = _newsHeadingFont, _newsItemFont = _newsItemFont, _leftHandMargin = _leftHandMargin, _topMargin = _topMargin, SpaceBetweenColumns = spaceBetweenColumns, _showColumnDivider = _showColumnDivider, SpaceBetweenRows = spaceBetweenRows, _NewItemsOnTop = _newItemsOnTop, TableBigTitle = tableBigTitle, _ShowDayNumber = _showDayNumber, _ShowIn24hr_Format = _showIn24hr_Format, _AutoTimezoneOffset = _autoTimezoneOffset, _timeZoneOffset = _timeZoneOffset, DataRefreshInterval = dataRefreshInterval, _enableCountryFilter = _enableCountryFilter, _countryFilter = _countryFilter, hide_these_columns = hide_these_columns, _timeUpcomingEventsInMinutes = _timeUpcomingEventsInMinutes, _showOnlyTodayNews = _showOnlyTodayNews, _dontShowOlderThan = _dontShowOlderThan, LastDataUpdateTime = lastDataUpdateTime, XMLNewsRawData = xMLNewsRawData }, input, ref cacheawxEconomicNewsv2);
+			if (cacheawxEconomicNews2 != null)
+				for (int idx = 0; idx < cacheawxEconomicNews2.Length; idx++)
+					if (cacheawxEconomicNews2[idx] != null && cacheawxEconomicNews2[idx]._showLowImpactNews == _showLowImpactNews && cacheawxEconomicNews2[idx]._showMediumImpactNews == _showMediumImpactNews && cacheawxEconomicNews2[idx]._showHighImpactNews == _showHighImpactNews && cacheawxEconomicNews2[idx]._showHolidayImpactNews == _showHolidayImpactNews && cacheawxEconomicNews2[idx]._showUnknownImpactNews == _showUnknownImpactNews && cacheawxEconomicNews2[idx]._showErrors == _showErrors && cacheawxEconomicNews2[idx]._showBigTitle == _showBigTitle && cacheawxEconomicNews2[idx]._showColumnsHeader == _showColumnsHeader && cacheawxEconomicNews2[idx]._newsHeadingFont == _newsHeadingFont && cacheawxEconomicNews2[idx]._newsItemFont == _newsItemFont && cacheawxEconomicNews2[idx]._leftHandMargin == _leftHandMargin && cacheawxEconomicNews2[idx]._topMargin == _topMargin && cacheawxEconomicNews2[idx].SpaceBetweenColumns == spaceBetweenColumns && cacheawxEconomicNews2[idx]._showColumnDivider == _showColumnDivider && cacheawxEconomicNews2[idx].SpaceBetweenRows == spaceBetweenRows && cacheawxEconomicNews2[idx]._NewItemsOnTop == _newItemsOnTop && cacheawxEconomicNews2[idx].TableBigTitle == tableBigTitle && cacheawxEconomicNews2[idx]._ShowDayNumber == _showDayNumber && cacheawxEconomicNews2[idx]._ShowIn24hr_Format == _showIn24hr_Format && cacheawxEconomicNews2[idx]._AutoTimezoneOffset == _autoTimezoneOffset && cacheawxEconomicNews2[idx]._timeZoneOffset == _timeZoneOffset && cacheawxEconomicNews2[idx].DataRefreshInterval == dataRefreshInterval && cacheawxEconomicNews2[idx]._enableCountryFilter == _enableCountryFilter && cacheawxEconomicNews2[idx]._countryFilter == _countryFilter && cacheawxEconomicNews2[idx].hide_these_columns == hide_these_columns && cacheawxEconomicNews2[idx]._timeUpcomingEventsInMinutes == _timeUpcomingEventsInMinutes && cacheawxEconomicNews2[idx]._showOnlyTodayNews == _showOnlyTodayNews && cacheawxEconomicNews2[idx]._dontShowOlderThan == _dontShowOlderThan && cacheawxEconomicNews2[idx].LastDataUpdateTime == lastDataUpdateTime && cacheawxEconomicNews2[idx].XMLNewsRawData == xMLNewsRawData && cacheawxEconomicNews2[idx].EqualsInput(input))
+						return cacheawxEconomicNews2[idx];
+			return CacheIndicator<awxEconomicNews2>(new awxEconomicNews2(){ _showLowImpactNews = _showLowImpactNews, _showMediumImpactNews = _showMediumImpactNews, _showHighImpactNews = _showHighImpactNews, _showHolidayImpactNews = _showHolidayImpactNews, _showUnknownImpactNews = _showUnknownImpactNews, _showErrors = _showErrors, _showBigTitle = _showBigTitle, _showColumnsHeader = _showColumnsHeader, _newsHeadingFont = _newsHeadingFont, _newsItemFont = _newsItemFont, _leftHandMargin = _leftHandMargin, _topMargin = _topMargin, SpaceBetweenColumns = spaceBetweenColumns, _showColumnDivider = _showColumnDivider, SpaceBetweenRows = spaceBetweenRows, _NewItemsOnTop = _newItemsOnTop, TableBigTitle = tableBigTitle, _ShowDayNumber = _showDayNumber, _ShowIn24hr_Format = _showIn24hr_Format, _AutoTimezoneOffset = _autoTimezoneOffset, _timeZoneOffset = _timeZoneOffset, DataRefreshInterval = dataRefreshInterval, _enableCountryFilter = _enableCountryFilter, _countryFilter = _countryFilter, hide_these_columns = hide_these_columns, _timeUpcomingEventsInMinutes = _timeUpcomingEventsInMinutes, _showOnlyTodayNews = _showOnlyTodayNews, _dontShowOlderThan = _dontShowOlderThan, LastDataUpdateTime = lastDataUpdateTime, XMLNewsRawData = xMLNewsRawData }, input, ref cacheawxEconomicNews2);
 		}
 	}
 }
@@ -885,14 +890,14 @@ namespace NinjaTrader.NinjaScript.MarketAnalyzerColumns
 {
 	public partial class MarketAnalyzerColumn : MarketAnalyzerColumnBase
 	{
-		public Indicators.awxEconomicNewsv2 awxEconomicNewsv2(bool _showLowImpactNews, bool _showMediumImpactNews, bool _showHighImpactNews, bool _showHolidayImpactNews, bool _showUnknownImpactNews, bool _showErrors, bool _showBigTitle, bool _showColumnsHeader, SimpleFont _newsHeadingFont, SimpleFont _newsItemFont, int _leftHandMargin, int _topMargin, int spaceBetweenColumns, bool _showColumnDivider, int spaceBetweenRows, bool _newItemsOnTop, string tableBigTitle, bool _showDayNumber, bool _showIn24hr_Format, bool _autoTimezoneOffset, double _timeZoneOffset, int dataRefreshInterval, bool _enableCountryFilter, string _countryFilter, string hide_these_columns, int _timeUpcomingEventsInMinutes, bool _showOnlyTodayNews, int _dontShowOlderThan, DateTime lastDataUpdateTime, string xMLNewsRawData)
+		public Indicators.awxEconomicNews2 awxEconomicNews2(bool _showLowImpactNews, bool _showMediumImpactNews, bool _showHighImpactNews, bool _showHolidayImpactNews, bool _showUnknownImpactNews, bool _showErrors, bool _showBigTitle, bool _showColumnsHeader, SimpleFont _newsHeadingFont, SimpleFont _newsItemFont, int _leftHandMargin, int _topMargin, int spaceBetweenColumns, bool _showColumnDivider, int spaceBetweenRows, bool _newItemsOnTop, string tableBigTitle, bool _showDayNumber, bool _showIn24hr_Format, bool _autoTimezoneOffset, double _timeZoneOffset, int dataRefreshInterval, bool _enableCountryFilter, string _countryFilter, string hide_these_columns, int _timeUpcomingEventsInMinutes, bool _showOnlyTodayNews, int _dontShowOlderThan, DateTime lastDataUpdateTime, string xMLNewsRawData)
 		{
-			return indicator.awxEconomicNewsv2(Input, _showLowImpactNews, _showMediumImpactNews, _showHighImpactNews, _showHolidayImpactNews, _showUnknownImpactNews, _showErrors, _showBigTitle, _showColumnsHeader, _newsHeadingFont, _newsItemFont, _leftHandMargin, _topMargin, spaceBetweenColumns, _showColumnDivider, spaceBetweenRows, _newItemsOnTop, tableBigTitle, _showDayNumber, _showIn24hr_Format, _autoTimezoneOffset, _timeZoneOffset, dataRefreshInterval, _enableCountryFilter, _countryFilter, hide_these_columns, _timeUpcomingEventsInMinutes, _showOnlyTodayNews, _dontShowOlderThan, lastDataUpdateTime, xMLNewsRawData);
+			return indicator.awxEconomicNews2(Input, _showLowImpactNews, _showMediumImpactNews, _showHighImpactNews, _showHolidayImpactNews, _showUnknownImpactNews, _showErrors, _showBigTitle, _showColumnsHeader, _newsHeadingFont, _newsItemFont, _leftHandMargin, _topMargin, spaceBetweenColumns, _showColumnDivider, spaceBetweenRows, _newItemsOnTop, tableBigTitle, _showDayNumber, _showIn24hr_Format, _autoTimezoneOffset, _timeZoneOffset, dataRefreshInterval, _enableCountryFilter, _countryFilter, hide_these_columns, _timeUpcomingEventsInMinutes, _showOnlyTodayNews, _dontShowOlderThan, lastDataUpdateTime, xMLNewsRawData);
 		}
 
-		public Indicators.awxEconomicNewsv2 awxEconomicNewsv2(ISeries<double> input , bool _showLowImpactNews, bool _showMediumImpactNews, bool _showHighImpactNews, bool _showHolidayImpactNews, bool _showUnknownImpactNews, bool _showErrors, bool _showBigTitle, bool _showColumnsHeader, SimpleFont _newsHeadingFont, SimpleFont _newsItemFont, int _leftHandMargin, int _topMargin, int spaceBetweenColumns, bool _showColumnDivider, int spaceBetweenRows, bool _newItemsOnTop, string tableBigTitle, bool _showDayNumber, bool _showIn24hr_Format, bool _autoTimezoneOffset, double _timeZoneOffset, int dataRefreshInterval, bool _enableCountryFilter, string _countryFilter, string hide_these_columns, int _timeUpcomingEventsInMinutes, bool _showOnlyTodayNews, int _dontShowOlderThan, DateTime lastDataUpdateTime, string xMLNewsRawData)
+		public Indicators.awxEconomicNews2 awxEconomicNews2(ISeries<double> input , bool _showLowImpactNews, bool _showMediumImpactNews, bool _showHighImpactNews, bool _showHolidayImpactNews, bool _showUnknownImpactNews, bool _showErrors, bool _showBigTitle, bool _showColumnsHeader, SimpleFont _newsHeadingFont, SimpleFont _newsItemFont, int _leftHandMargin, int _topMargin, int spaceBetweenColumns, bool _showColumnDivider, int spaceBetweenRows, bool _newItemsOnTop, string tableBigTitle, bool _showDayNumber, bool _showIn24hr_Format, bool _autoTimezoneOffset, double _timeZoneOffset, int dataRefreshInterval, bool _enableCountryFilter, string _countryFilter, string hide_these_columns, int _timeUpcomingEventsInMinutes, bool _showOnlyTodayNews, int _dontShowOlderThan, DateTime lastDataUpdateTime, string xMLNewsRawData)
 		{
-			return indicator.awxEconomicNewsv2(input, _showLowImpactNews, _showMediumImpactNews, _showHighImpactNews, _showHolidayImpactNews, _showUnknownImpactNews, _showErrors, _showBigTitle, _showColumnsHeader, _newsHeadingFont, _newsItemFont, _leftHandMargin, _topMargin, spaceBetweenColumns, _showColumnDivider, spaceBetweenRows, _newItemsOnTop, tableBigTitle, _showDayNumber, _showIn24hr_Format, _autoTimezoneOffset, _timeZoneOffset, dataRefreshInterval, _enableCountryFilter, _countryFilter, hide_these_columns, _timeUpcomingEventsInMinutes, _showOnlyTodayNews, _dontShowOlderThan, lastDataUpdateTime, xMLNewsRawData);
+			return indicator.awxEconomicNews2(input, _showLowImpactNews, _showMediumImpactNews, _showHighImpactNews, _showHolidayImpactNews, _showUnknownImpactNews, _showErrors, _showBigTitle, _showColumnsHeader, _newsHeadingFont, _newsItemFont, _leftHandMargin, _topMargin, spaceBetweenColumns, _showColumnDivider, spaceBetweenRows, _newItemsOnTop, tableBigTitle, _showDayNumber, _showIn24hr_Format, _autoTimezoneOffset, _timeZoneOffset, dataRefreshInterval, _enableCountryFilter, _countryFilter, hide_these_columns, _timeUpcomingEventsInMinutes, _showOnlyTodayNews, _dontShowOlderThan, lastDataUpdateTime, xMLNewsRawData);
 		}
 	}
 }
@@ -901,14 +906,14 @@ namespace NinjaTrader.NinjaScript.Strategies
 {
 	public partial class Strategy : NinjaTrader.Gui.NinjaScript.StrategyRenderBase
 	{
-		public Indicators.awxEconomicNewsv2 awxEconomicNewsv2(bool _showLowImpactNews, bool _showMediumImpactNews, bool _showHighImpactNews, bool _showHolidayImpactNews, bool _showUnknownImpactNews, bool _showErrors, bool _showBigTitle, bool _showColumnsHeader, SimpleFont _newsHeadingFont, SimpleFont _newsItemFont, int _leftHandMargin, int _topMargin, int spaceBetweenColumns, bool _showColumnDivider, int spaceBetweenRows, bool _newItemsOnTop, string tableBigTitle, bool _showDayNumber, bool _showIn24hr_Format, bool _autoTimezoneOffset, double _timeZoneOffset, int dataRefreshInterval, bool _enableCountryFilter, string _countryFilter, string hide_these_columns, int _timeUpcomingEventsInMinutes, bool _showOnlyTodayNews, int _dontShowOlderThan, DateTime lastDataUpdateTime, string xMLNewsRawData)
+		public Indicators.awxEconomicNews2 awxEconomicNews2(bool _showLowImpactNews, bool _showMediumImpactNews, bool _showHighImpactNews, bool _showHolidayImpactNews, bool _showUnknownImpactNews, bool _showErrors, bool _showBigTitle, bool _showColumnsHeader, SimpleFont _newsHeadingFont, SimpleFont _newsItemFont, int _leftHandMargin, int _topMargin, int spaceBetweenColumns, bool _showColumnDivider, int spaceBetweenRows, bool _newItemsOnTop, string tableBigTitle, bool _showDayNumber, bool _showIn24hr_Format, bool _autoTimezoneOffset, double _timeZoneOffset, int dataRefreshInterval, bool _enableCountryFilter, string _countryFilter, string hide_these_columns, int _timeUpcomingEventsInMinutes, bool _showOnlyTodayNews, int _dontShowOlderThan, DateTime lastDataUpdateTime, string xMLNewsRawData)
 		{
-			return indicator.awxEconomicNewsv2(Input, _showLowImpactNews, _showMediumImpactNews, _showHighImpactNews, _showHolidayImpactNews, _showUnknownImpactNews, _showErrors, _showBigTitle, _showColumnsHeader, _newsHeadingFont, _newsItemFont, _leftHandMargin, _topMargin, spaceBetweenColumns, _showColumnDivider, spaceBetweenRows, _newItemsOnTop, tableBigTitle, _showDayNumber, _showIn24hr_Format, _autoTimezoneOffset, _timeZoneOffset, dataRefreshInterval, _enableCountryFilter, _countryFilter, hide_these_columns, _timeUpcomingEventsInMinutes, _showOnlyTodayNews, _dontShowOlderThan, lastDataUpdateTime, xMLNewsRawData);
+			return indicator.awxEconomicNews2(Input, _showLowImpactNews, _showMediumImpactNews, _showHighImpactNews, _showHolidayImpactNews, _showUnknownImpactNews, _showErrors, _showBigTitle, _showColumnsHeader, _newsHeadingFont, _newsItemFont, _leftHandMargin, _topMargin, spaceBetweenColumns, _showColumnDivider, spaceBetweenRows, _newItemsOnTop, tableBigTitle, _showDayNumber, _showIn24hr_Format, _autoTimezoneOffset, _timeZoneOffset, dataRefreshInterval, _enableCountryFilter, _countryFilter, hide_these_columns, _timeUpcomingEventsInMinutes, _showOnlyTodayNews, _dontShowOlderThan, lastDataUpdateTime, xMLNewsRawData);
 		}
 
-		public Indicators.awxEconomicNewsv2 awxEconomicNewsv2(ISeries<double> input , bool _showLowImpactNews, bool _showMediumImpactNews, bool _showHighImpactNews, bool _showHolidayImpactNews, bool _showUnknownImpactNews, bool _showErrors, bool _showBigTitle, bool _showColumnsHeader, SimpleFont _newsHeadingFont, SimpleFont _newsItemFont, int _leftHandMargin, int _topMargin, int spaceBetweenColumns, bool _showColumnDivider, int spaceBetweenRows, bool _newItemsOnTop, string tableBigTitle, bool _showDayNumber, bool _showIn24hr_Format, bool _autoTimezoneOffset, double _timeZoneOffset, int dataRefreshInterval, bool _enableCountryFilter, string _countryFilter, string hide_these_columns, int _timeUpcomingEventsInMinutes, bool _showOnlyTodayNews, int _dontShowOlderThan, DateTime lastDataUpdateTime, string xMLNewsRawData)
+		public Indicators.awxEconomicNews2 awxEconomicNews2(ISeries<double> input , bool _showLowImpactNews, bool _showMediumImpactNews, bool _showHighImpactNews, bool _showHolidayImpactNews, bool _showUnknownImpactNews, bool _showErrors, bool _showBigTitle, bool _showColumnsHeader, SimpleFont _newsHeadingFont, SimpleFont _newsItemFont, int _leftHandMargin, int _topMargin, int spaceBetweenColumns, bool _showColumnDivider, int spaceBetweenRows, bool _newItemsOnTop, string tableBigTitle, bool _showDayNumber, bool _showIn24hr_Format, bool _autoTimezoneOffset, double _timeZoneOffset, int dataRefreshInterval, bool _enableCountryFilter, string _countryFilter, string hide_these_columns, int _timeUpcomingEventsInMinutes, bool _showOnlyTodayNews, int _dontShowOlderThan, DateTime lastDataUpdateTime, string xMLNewsRawData)
 		{
-			return indicator.awxEconomicNewsv2(input, _showLowImpactNews, _showMediumImpactNews, _showHighImpactNews, _showHolidayImpactNews, _showUnknownImpactNews, _showErrors, _showBigTitle, _showColumnsHeader, _newsHeadingFont, _newsItemFont, _leftHandMargin, _topMargin, spaceBetweenColumns, _showColumnDivider, spaceBetweenRows, _newItemsOnTop, tableBigTitle, _showDayNumber, _showIn24hr_Format, _autoTimezoneOffset, _timeZoneOffset, dataRefreshInterval, _enableCountryFilter, _countryFilter, hide_these_columns, _timeUpcomingEventsInMinutes, _showOnlyTodayNews, _dontShowOlderThan, lastDataUpdateTime, xMLNewsRawData);
+			return indicator.awxEconomicNews2(input, _showLowImpactNews, _showMediumImpactNews, _showHighImpactNews, _showHolidayImpactNews, _showUnknownImpactNews, _showErrors, _showBigTitle, _showColumnsHeader, _newsHeadingFont, _newsItemFont, _leftHandMargin, _topMargin, spaceBetweenColumns, _showColumnDivider, spaceBetweenRows, _newItemsOnTop, tableBigTitle, _showDayNumber, _showIn24hr_Format, _autoTimezoneOffset, _timeZoneOffset, dataRefreshInterval, _enableCountryFilter, _countryFilter, hide_these_columns, _timeUpcomingEventsInMinutes, _showOnlyTodayNews, _dontShowOlderThan, lastDataUpdateTime, xMLNewsRawData);
 		}
 	}
 }

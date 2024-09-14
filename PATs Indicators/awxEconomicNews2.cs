@@ -115,7 +115,7 @@ namespace Indicators.awxEconomicNews_namespace2
 
 namespace NinjaTrader.NinjaScript.Indicators
 {
-    [CategoryDefaultExpanded(false)]
+    [CategoryDefaultExpanded(true)]
     [Gui.CategoryOrder("Ignore this Section (do not update fields)", 7000001)]
     public class awxEconomicNews2 : Indicator
 	{
@@ -519,8 +519,8 @@ namespace NinjaTrader.NinjaScript.Indicators
 		#region DisplayName Override
 		public override string DisplayName 
 		{
-			// get { return $"{this.GetType().Name}(Refreshed {LastDataUpdateTime.ToString("dd-MMM-yyyy, HH:mm")})"; }
-			get { return $"{Name}(Refreshed {LastDataUpdateTime.ToString("dd-MMM-yyyy, HH:mm")})"; }
+			// get { return $"{this.GetType().Name}(Last Refresh {LastDataUpdateTime.ToString("dd-MMM-yyyy, HH:mm:ss")})"; }
+			get { return $"{Name}(Last Refresh {LastDataUpdateTime.ToString("dd-MMM-yyyy, HH:mm:ss")})"; }
 		}
 		#endregion
 
@@ -542,14 +542,16 @@ namespace NinjaTrader.NinjaScript.Indicators
 
 	    
 
-		private string getNews()
+		private string GetNews()
 		{
+            //Print($"GetNews");
             //Holds the raw XML returned from the news service
             string rawXML = null;
-            WebResponse newsResponse = null;    //should be disposed later
+            WebResponse newsResponse = null;    
             try
             {
-                string error_title = "";            //check if error_happens somewhere
+                // check if error_happens somewhere
+                string error_title = "";            
 
                 //Build the web request and get RawXML
                 WebRequest newsRequest = WebRequest.Create(NEWS_URL);
@@ -582,14 +584,14 @@ namespace NinjaTrader.NinjaScript.Indicators
                 {
 					//NewsItem errorNewsItem = new NewsItem() { Title = error_title, Country = "N/A", Impact = NewsImpact.Error };
 					//_newsItems.Add(errorNewsItem);
-					string err_mes = $"[{this.GetType().Name}][{System.Reflection.MethodBase.GetCurrentMethod().Name}], error_title";
+					string err_mes = $"[{this.GetType().Name}][{System.Reflection.MethodBase.GetCurrentMethod().Name}], {error_title}";
 					Print(err_mes);
                     Log(err_mes, LogLevel.Error);
                 }
             }
             catch (Exception e)
             {
-                string err = $"***[{this.GetType().Name}][{System.Reflection.MethodBase.GetCurrentMethod().Name}], [ERROR]: {e.ToString()}";
+                string err = $"[{this.GetType().Name}][{System.Reflection.MethodBase.GetCurrentMethod().Name}], [ERROR]: {e.ToString()}";
                 //Just bubble up the exception to the top
                 Print(err);
                 Log(e.ToString(), LogLevel.Error);
@@ -599,10 +601,12 @@ namespace NinjaTrader.NinjaScript.Indicators
             }
             finally
             {
-                //We are done, make sure we don't refresh again today
-                if(newsResponse != null)
+				//We are done, make sure we don't refresh again today
+				if (newsResponse != null)
+				{
 					newsResponse.Dispose();
-                LastDataUpdateTime = DateTime.Now;
+					LastDataUpdateTime = DateTime.Now;
+				}
             }
 			return rawXML;
         }
@@ -613,8 +617,7 @@ namespace NinjaTrader.NinjaScript.Indicators
 	    private void RefreshNewsItems()
 	    {
             string error_title = "";
-            //Print("\nRefreshNewsItems:");
-          
+            //Print("\nRefreshNewsItems:");          
 
             //if something stuck in previous cycle
             if (_refreshIsProcessing)
@@ -626,27 +629,22 @@ namespace NinjaTrader.NinjaScript.Indicators
 			// If it is time to refresh news from web
 			DateTime nextUpdate = LastDataUpdateTime.AddMinutes(DataRefreshInterval);
 
-            //Print($"LastUpdate: {LastDataUpdateTime.ToString()}\nNow: {DateTime.Now.ToString()}\nNextUpdate: {nextUpdate.ToString()}");
+			//Print($"LastUpdate: {LastDataUpdateTime.ToString()}\nNow: {DateTime.Now.ToString()}\nNextUpdate: {nextUpdate.ToString()}");
+			//string xml = (string.IsNullOrEmpty(XMLNewsRawData)) ? "Xml[ ]" : $"Xml[{XMLNewsRawData}]";
+			//Print(xml);
 
-
-//			string xml = (XMLNewsRawData.IsNullOrEmpty()) ? "Xml[ ]" : $"Xml[{XMLNewsRawData}]";
-//			Print(xml);
-            if (XMLNewsRawData.IsNullOrEmpty() || (nextUpdate <= DateTime.Now))
+			if (string.IsNullOrEmpty(XMLNewsRawData) || (nextUpdate <= DateTime.Now))
 			{
-				//Print($"Before GetNews");
-
-				string data = getNews();
-				if (!data.IsNullOrEmpty())
+				string data = GetNews();
+				if (!string.IsNullOrEmpty(data))
 					XMLNewsRawData = data.Replace('\n', ' ');
-
-                //Print($"After GetNews");
 			}
 			//else
 			//{
 			//	Print("Skipped GetNews");
 			//}
 
-			if (!XMLNewsRawData.IsNullOrEmpty())
+			if (!string.IsNullOrEmpty(XMLNewsRawData))
 			{
 				//Populate the news list for rendering (Get the XML into a useable format)
 				XmlDocument rawXmlDoc = new XmlDocument();
@@ -719,7 +717,7 @@ namespace NinjaTrader.NinjaScript.Indicators
             {
                 //NewsItem errorNewsItem = new NewsItem() { Title = error_title, Country = "N/A", Impact = NewsImpact.Error };
                 //_newsItems.Add(errorNewsItem);
-                string err_mes = $"[{this.GetType().Name}][{System.Reflection.MethodBase.GetCurrentMethod().Name}], error_title";
+                string err_mes = $"[{this.GetType().Name}][{System.Reflection.MethodBase.GetCurrentMethod().Name}], {error_title}";
                 Print(err_mes);
                 Log(err_mes, LogLevel.Error);
             }

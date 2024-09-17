@@ -23,10 +23,18 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
         private TextLocation textLocation;
 		private System.Windows.Media.Brush	textBrush;
 		private string FontName = "Consolas";
+	
+		private string _notEnoughBars = "Not enough bars.";
 
 		private string outputText;
 
-		protected override void OnStateChange()
+        //public override string DisplayName
+        //{
+        //    get { return $"{this.GetType().Name}: xxxxxx)"; }
+        //}
+
+
+        protected override void OnStateChange()
 		{
 			if (State == State.SetDefaults)
 			{
@@ -44,7 +52,7 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 				WMBrush = System.Windows.Media.Brushes.Gold;
 				WMSize = 12;
 				WMOpacity = 100;
-				X_Offset = -40;
+				X_Offset = -45;
 				Y_Offset = 10;
 
 				CalculationType = CalculationType.TimeSpan;
@@ -158,7 +166,7 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
             }
             else
             {
-                outputText += "Interval does not contain enough bars\n";
+                outputText += _notEnoughBars;
             }
         }
 
@@ -198,7 +206,7 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 
             if (nbBarSpan > Count)
             {
-                outputText = "Interval does not contain enough bars\n";
+                outputText = _notEnoughBars;
                 return;
             }
 
@@ -262,7 +270,7 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
             }
             else
             {
-                outputText += "Interval does not contain enough bars\n";
+                outputText += _notEnoughBars;
             }
         }
 
@@ -401,22 +409,13 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 			set { textBrush = value; }
 		}
 
-		[Browsable(false)]
-		public string TextBrushSerialize
-		{
-			get { return Serialize.BrushToString(WMBrush); }
-			set { WMBrush = Serialize.StringToBrush(value); }
-		}
-
         [NinjaScriptProperty]
-        [XmlIgnore]
         [Display(Name = "X Offset (+/- values to move left or right)", Description = "X Offset", Order = 5, GroupName = "Text Output")]
         [Range(-300, 300)]
         public int X_Offset
         { get; set; }
 
         [NinjaScriptProperty]
-        [XmlIgnore]
         [Display(Name = "Y Offset (+/- values to move up or down)", Description = "Y Offset", Order = 6, GroupName = "Text Output")]
         [Range(-80, 80)]
         public int Y_Offset
@@ -460,6 +459,15 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
         public bool InvertOpeningHours
         { get; set; }
 
+		
+		// Serialization 
+		
+		[Browsable(false)]
+		public string TextBrushSerialize
+		{
+			get { return Serialize.BrushToString(WMBrush); }
+			set { WMBrush = Serialize.StringToBrush(value); }
+		}
 
         // XmlSerializer does not support TimeSpan, so use this property for 
         // serialization instead.

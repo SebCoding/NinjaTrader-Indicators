@@ -86,11 +86,12 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
                 }
             }
 		}
-		
+
 		#region Properties
-		
-		[Range(1, int.MaxValue), NinjaScriptProperty]
-		[Display(ResourceType = typeof(Custom.Resource), Name = "ATR Period", GroupName = "Parameters", Order = 0)]
+
+		[NinjaScriptProperty]
+		[Range(1, int.MaxValue)]
+		[Display(Name = "ATR Period", GroupName = "Parameters", Order = 0)]
 		public int ATR_Period
 		{ get; set; }
 		
@@ -99,8 +100,9 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 		public bool DisplayInTicks
 		{ get; set; }
 
-        [Range(1, int.MaxValue), NinjaScriptProperty]
-        [Display(ResourceType = typeof(Custom.Resource), Name = "Risk = BarSize + x Ticks. Define x.", GroupName = "Parameters", Order = 2)]
+		[NinjaScriptProperty]
+        [Range(1, int.MaxValue)]
+        [Display(Name = "Value of x in \"Risk = BarSize + x Ticks\"", GroupName = "Parameters", Order = 2)]
         public int RiskAddTicks
         { get; set; }
 

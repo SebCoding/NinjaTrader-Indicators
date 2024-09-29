@@ -17,10 +17,10 @@ using System.Xml.Serialization;
 //This namespace holds Indicators in this folder and is required. Do not change it.
 namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 {
-    [Gui.CategoryOrder("Time", 1000001)]
-    [Gui.CategoryOrder("Calculation (within opening hours)", 1000002)]
-    [Gui.CategoryOrder("Calculation (outside opening hours)", 1000003)]
-    [Gui.CategoryOrder("Text Output", 1000004)]
+    [Gui.CategoryOrder("Time", 1)]
+    [Gui.CategoryOrder("Calculation (within opening hours)", 2)]
+    [Gui.CategoryOrder("Calculation (outside opening hours)", 3)]
+    [Gui.CategoryOrder("Text Output", 4)]
     public class BarSpeed : Indicator
 	{
 		private CalculationType calculationTypeDuringOpen;

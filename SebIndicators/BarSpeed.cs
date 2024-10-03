@@ -1,15 +1,11 @@
 
 #region Using declarations
-using Gat;
-using NinjaTrader.Cbi;
 using NinjaTrader.Gui;
 using NinjaTrader.Gui.Chart;
 using SharpDX.Direct2D1;
-using SharpDX.DirectWrite;
 using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
-using System.Windows.Forms.VisualStyles;
 using System.Xml;
 using System.Xml.Serialization;
 #endregion
@@ -249,7 +245,7 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
             double nbSecs = Time[0].Subtract(Time[nbBarSpan-1]).TotalSeconds;           
 
             // Bars Per Minute (BPM)
-            double bpm = Math.Round(nbBarSpan / (nbSecs*60), 2);
+            double bpm = Math.Round(nbBarSpan / (nbSecs/60), 2);
             double barDuration = (nbBarSpan > 0) ? Math.Round(nbSecs / nbBarSpan, 1) : 0;
 
             //Print($"nbSecs: {nbSecs}, barDuration: {barDuration}s");

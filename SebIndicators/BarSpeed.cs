@@ -67,6 +67,7 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
                 SpanDuringOpen = 10;
                 SpanDuringClose = 5;
                 InvertOpeningHours = false;
+                DetailedOutput = false;
             }
 			else if (State == State.Historical)
 			{
@@ -77,8 +78,44 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 			
 			}
 		}
+        protected override void OnBarUpdate()
+        {
+            if (Calculate != Calculate.OnBarClose)
+            {
+                outputText = $"BAR SPEED\nCalculation currently set to {Calculate}\nPlease set calculation to OnBarClose";
+                return;
+            }
 
-        private bool isMarketOpen()
+            if (isMarketOpen())
+            {
+                switch (calculationTypeDuringOpen)
+                {
+                    case CalculationType.TimeSpan:
+                        calculateBasedOnTimeSpan(SpanDuringOpen);
+                        break;
+                    case CalculationType.NumberOfBars:
+                        calculateBasedOnBarSpan(SpanDuringOpen);
+                        break;
+                }
+            }
+            else
+            {
+                switch (calculationTypeDuringClose)
+                {
+                    case CalculationType.TimeSpan:
+                        calculateBasedOnTimeSpan(SpanDuringClose);
+                        break;
+                    case CalculationType.NumberOfBars:
+                        calculateBasedOnBarSpan(SpanDuringClose);
+                        break;
+                }
+            }
+        }
+
+
+        #region Calculation Methods
+
+        protected bool isMarketOpen()
         {
             bool marketIsOpen;
             DateTime currentBarDateTime = Bars.GetTime(CurrentBar);
@@ -166,9 +203,12 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
             outputText = $"BAR SPEED [last {TimeRangeInMinutes}m]\n";
             if (barDuration > 0)
             {
-                outputText += $"1 bar = {barDurationStr}\n";
-                string plural = ((bpm >= 2) ? "s" : "");
-                outputText += $"1 min = {bpm} bar{plural}\n";
+                outputText += $"1 bar \u2248 {barDurationStr}\n";
+                if (DetailedOutput)
+                {
+                    string plural = ((bpm >= 2) ? "s" : "");
+                    outputText += $"1 min = {bpm} bar{plural}\n";
+                }
             }
             else
             {
@@ -238,9 +278,12 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
             outputText = $"BAR SPEED [last {nbBarSpan} bar{plural}]\n";
             if (barDuration > 0)
             {
-                outputText += $"1 bar = {barDurationStr}\n";
-                //plural = ((bpm >= 2) ? "s" : "");
-                //outputText += $"1 min = {bpm} bar{plural}\n";
+                outputText += $"1 bar \u2248 {barDurationStr}\n";
+                if(DetailedOutput)
+                {
+                    plural = ((bpm >= 2) ? "s" : "");
+                    outputText += $"1 min = {bpm} bar{plural}\n";
+                }
             }
             else
             {
@@ -248,41 +291,10 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
             }
         }
 
-        protected override void OnBarUpdate()
-        {
-            if (Calculate != Calculate.OnBarClose)
-            {
-                outputText = $"BAR SPEED\nCalculation currently set to {Calculate}\nPlease set calculation to OnBarClose";
-                return;
-            }
+        #endregion
 
-            if (isMarketOpen())
-            {
-                switch (calculationTypeDuringOpen)
-                {
-                    case CalculationType.TimeSpan:
-                        calculateBasedOnTimeSpan(SpanDuringOpen);
-                        break;
-                    case CalculationType.NumberOfBars:
-                        calculateBasedOnBarSpan(SpanDuringOpen);
-                        break;
-                }
-            }
-            else
-            {
-                switch (calculationTypeDuringClose)
-                {
-                    case CalculationType.TimeSpan:
-                        calculateBasedOnTimeSpan(SpanDuringClose);
-                        break;
-                    case CalculationType.NumberOfBars:
-                        calculateBasedOnBarSpan(SpanDuringClose);
-                        break;
-                }
-            }
-        }
-
-		protected override void OnRender(ChartControl chartControl, ChartScale chartScale)
+        #region Rendering on Chart
+        protected override void OnRender(ChartControl chartControl, ChartScale chartScale)
 		{
 			if (!IsInHitTest)
 			{              
@@ -366,6 +378,7 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 				textLayout.Dispose();			
 			}
 		}
+        #endregion
 
         #region Properties
 
@@ -417,12 +430,17 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
         // Text Ouput Related Properties
 
         [NinjaScriptProperty]
+        [Display(Name = "Detailed Output", Description = "Detailed Output", Order = 1, GroupName = "Text Output")]
+        public bool DetailedOutput
+        { get; set; }
+
+        [NinjaScriptProperty]
 		[Range(1, int.MaxValue)]
-		[Display(Name = "Text Size", Order = 1, GroupName = "Text Output")]
+		[Display(Name = "Text Size", Order = 2, GroupName = "Text Output")]
 		public int WMSize
 		{ get; set; }
 
-		[Display(Name = "Text Location", Description = "Select location", Order = 2, GroupName = "Text Output")]
+		[Display(Name = "Text Location", Description = "Select location", Order = 3, GroupName = "Text Output")]
 		public TextLocation TextLocation
         {
 			get { return textLocation; }
@@ -431,12 +449,12 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 
 		[NinjaScriptProperty]
 		[Range(1, 100)]
-		[Display(Name = "Text Opacity", Description = "Enter Opacity % from 1 to 100", Order = 3, GroupName = "Text Output")]
+		[Display(Name = "Text Opacity", Description = "Enter Opacity % from 1 to 100", Order = 4, GroupName = "Text Output")]
 		public int WMOpacity
 		{ get; set; }
 
 		[XmlIgnore]
-		[Display(Name = "Text Color", Description = "BarSpeed Color", Order = 4, GroupName = "Text Output")]
+		[Display(Name = "Text Color", Description = "BarSpeed Color", Order = 5, GroupName = "Text Output")]
 		public System.Windows.Media.Brush WMBrush
 		{
 			get { return textBrush; }
@@ -444,13 +462,13 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 		}
 
         [NinjaScriptProperty]
-        [Display(Name = "X Offset (+/- values to move left or right)", Description = "X Offset", Order = 5, GroupName = "Text Output")]
+        [Display(Name = "X Offset (+/- values to move left or right)", Description = "X Offset", Order = 6, GroupName = "Text Output")]
         [Range(-300, 300)]
         public int X_Offset
         { get; set; }
 
         [NinjaScriptProperty]
-        [Display(Name = "Y Offset (+/- values to move up or down)", Description = "Y Offset", Order = 6, GroupName = "Text Output")]
+        [Display(Name = "Y Offset (+/- values to move up or down)", Description = "Y Offset", Order = 7, GroupName = "Text Output")]
         [Range(-80, 80)]
         public int Y_Offset
         { get; set; }
@@ -530,18 +548,18 @@ namespace NinjaTrader.NinjaScript.Indicators
 	public partial class Indicator : NinjaTrader.Gui.NinjaScript.IndicatorRenderBase
 	{
 		private SebIndicators.BarSpeed[] cacheBarSpeed;
-		public SebIndicators.BarSpeed BarSpeed(TimeSpan marketOpenTime, TimeSpan marketCloseTime, bool invertOpeningHours, int spanDuringOpen, int spanDuringClose, int wMSize, int wMOpacity, int x_Offset, int y_Offset)
+		public SebIndicators.BarSpeed BarSpeed(TimeSpan marketOpenTime, TimeSpan marketCloseTime, bool invertOpeningHours, int spanDuringOpen, int spanDuringClose, bool detailedOutput, int wMSize, int wMOpacity, int x_Offset, int y_Offset)
 		{
-			return BarSpeed(Input, marketOpenTime, marketCloseTime, invertOpeningHours, spanDuringOpen, spanDuringClose, wMSize, wMOpacity, x_Offset, y_Offset);
+			return BarSpeed(Input, marketOpenTime, marketCloseTime, invertOpeningHours, spanDuringOpen, spanDuringClose, detailedOutput, wMSize, wMOpacity, x_Offset, y_Offset);
 		}
 
-		public SebIndicators.BarSpeed BarSpeed(ISeries<double> input, TimeSpan marketOpenTime, TimeSpan marketCloseTime, bool invertOpeningHours, int spanDuringOpen, int spanDuringClose, int wMSize, int wMOpacity, int x_Offset, int y_Offset)
+		public SebIndicators.BarSpeed BarSpeed(ISeries<double> input, TimeSpan marketOpenTime, TimeSpan marketCloseTime, bool invertOpeningHours, int spanDuringOpen, int spanDuringClose, bool detailedOutput, int wMSize, int wMOpacity, int x_Offset, int y_Offset)
 		{
 			if (cacheBarSpeed != null)
 				for (int idx = 0; idx < cacheBarSpeed.Length; idx++)
-					if (cacheBarSpeed[idx] != null && cacheBarSpeed[idx].MarketOpenTime == marketOpenTime && cacheBarSpeed[idx].MarketCloseTime == marketCloseTime && cacheBarSpeed[idx].InvertOpeningHours == invertOpeningHours && cacheBarSpeed[idx].SpanDuringOpen == spanDuringOpen && cacheBarSpeed[idx].SpanDuringClose == spanDuringClose && cacheBarSpeed[idx].WMSize == wMSize && cacheBarSpeed[idx].WMOpacity == wMOpacity && cacheBarSpeed[idx].X_Offset == x_Offset && cacheBarSpeed[idx].Y_Offset == y_Offset && cacheBarSpeed[idx].EqualsInput(input))
+					if (cacheBarSpeed[idx] != null && cacheBarSpeed[idx].MarketOpenTime == marketOpenTime && cacheBarSpeed[idx].MarketCloseTime == marketCloseTime && cacheBarSpeed[idx].InvertOpeningHours == invertOpeningHours && cacheBarSpeed[idx].SpanDuringOpen == spanDuringOpen && cacheBarSpeed[idx].SpanDuringClose == spanDuringClose && cacheBarSpeed[idx].DetailedOutput == detailedOutput && cacheBarSpeed[idx].WMSize == wMSize && cacheBarSpeed[idx].WMOpacity == wMOpacity && cacheBarSpeed[idx].X_Offset == x_Offset && cacheBarSpeed[idx].Y_Offset == y_Offset && cacheBarSpeed[idx].EqualsInput(input))
 						return cacheBarSpeed[idx];
-			return CacheIndicator<SebIndicators.BarSpeed>(new SebIndicators.BarSpeed(){ MarketOpenTime = marketOpenTime, MarketCloseTime = marketCloseTime, InvertOpeningHours = invertOpeningHours, SpanDuringOpen = spanDuringOpen, SpanDuringClose = spanDuringClose, WMSize = wMSize, WMOpacity = wMOpacity, X_Offset = x_Offset, Y_Offset = y_Offset }, input, ref cacheBarSpeed);
+			return CacheIndicator<SebIndicators.BarSpeed>(new SebIndicators.BarSpeed(){ MarketOpenTime = marketOpenTime, MarketCloseTime = marketCloseTime, InvertOpeningHours = invertOpeningHours, SpanDuringOpen = spanDuringOpen, SpanDuringClose = spanDuringClose, DetailedOutput = detailedOutput, WMSize = wMSize, WMOpacity = wMOpacity, X_Offset = x_Offset, Y_Offset = y_Offset }, input, ref cacheBarSpeed);
 		}
 	}
 }
@@ -550,14 +568,14 @@ namespace NinjaTrader.NinjaScript.MarketAnalyzerColumns
 {
 	public partial class MarketAnalyzerColumn : MarketAnalyzerColumnBase
 	{
-		public Indicators.SebIndicators.BarSpeed BarSpeed(TimeSpan marketOpenTime, TimeSpan marketCloseTime, bool invertOpeningHours, int spanDuringOpen, int spanDuringClose, int wMSize, int wMOpacity, int x_Offset, int y_Offset)
+		public Indicators.SebIndicators.BarSpeed BarSpeed(TimeSpan marketOpenTime, TimeSpan marketCloseTime, bool invertOpeningHours, int spanDuringOpen, int spanDuringClose, bool detailedOutput, int wMSize, int wMOpacity, int x_Offset, int y_Offset)
 		{
-			return indicator.BarSpeed(Input, marketOpenTime, marketCloseTime, invertOpeningHours, spanDuringOpen, spanDuringClose, wMSize, wMOpacity, x_Offset, y_Offset);
+			return indicator.BarSpeed(Input, marketOpenTime, marketCloseTime, invertOpeningHours, spanDuringOpen, spanDuringClose, detailedOutput, wMSize, wMOpacity, x_Offset, y_Offset);
 		}
 
-		public Indicators.SebIndicators.BarSpeed BarSpeed(ISeries<double> input , TimeSpan marketOpenTime, TimeSpan marketCloseTime, bool invertOpeningHours, int spanDuringOpen, int spanDuringClose, int wMSize, int wMOpacity, int x_Offset, int y_Offset)
+		public Indicators.SebIndicators.BarSpeed BarSpeed(ISeries<double> input , TimeSpan marketOpenTime, TimeSpan marketCloseTime, bool invertOpeningHours, int spanDuringOpen, int spanDuringClose, bool detailedOutput, int wMSize, int wMOpacity, int x_Offset, int y_Offset)
 		{
-			return indicator.BarSpeed(input, marketOpenTime, marketCloseTime, invertOpeningHours, spanDuringOpen, spanDuringClose, wMSize, wMOpacity, x_Offset, y_Offset);
+			return indicator.BarSpeed(input, marketOpenTime, marketCloseTime, invertOpeningHours, spanDuringOpen, spanDuringClose, detailedOutput, wMSize, wMOpacity, x_Offset, y_Offset);
 		}
 	}
 }
@@ -566,14 +584,14 @@ namespace NinjaTrader.NinjaScript.Strategies
 {
 	public partial class Strategy : NinjaTrader.Gui.NinjaScript.StrategyRenderBase
 	{
-		public Indicators.SebIndicators.BarSpeed BarSpeed(TimeSpan marketOpenTime, TimeSpan marketCloseTime, bool invertOpeningHours, int spanDuringOpen, int spanDuringClose, int wMSize, int wMOpacity, int x_Offset, int y_Offset)
+		public Indicators.SebIndicators.BarSpeed BarSpeed(TimeSpan marketOpenTime, TimeSpan marketCloseTime, bool invertOpeningHours, int spanDuringOpen, int spanDuringClose, bool detailedOutput, int wMSize, int wMOpacity, int x_Offset, int y_Offset)
 		{
-			return indicator.BarSpeed(Input, marketOpenTime, marketCloseTime, invertOpeningHours, spanDuringOpen, spanDuringClose, wMSize, wMOpacity, x_Offset, y_Offset);
+			return indicator.BarSpeed(Input, marketOpenTime, marketCloseTime, invertOpeningHours, spanDuringOpen, spanDuringClose, detailedOutput, wMSize, wMOpacity, x_Offset, y_Offset);
 		}
 
-		public Indicators.SebIndicators.BarSpeed BarSpeed(ISeries<double> input , TimeSpan marketOpenTime, TimeSpan marketCloseTime, bool invertOpeningHours, int spanDuringOpen, int spanDuringClose, int wMSize, int wMOpacity, int x_Offset, int y_Offset)
+		public Indicators.SebIndicators.BarSpeed BarSpeed(ISeries<double> input , TimeSpan marketOpenTime, TimeSpan marketCloseTime, bool invertOpeningHours, int spanDuringOpen, int spanDuringClose, bool detailedOutput, int wMSize, int wMOpacity, int x_Offset, int y_Offset)
 		{
-			return indicator.BarSpeed(input, marketOpenTime, marketCloseTime, invertOpeningHours, spanDuringOpen, spanDuringClose, wMSize, wMOpacity, x_Offset, y_Offset);
+			return indicator.BarSpeed(input, marketOpenTime, marketCloseTime, invertOpeningHours, spanDuringOpen, spanDuringClose, detailedOutput, wMSize, wMOpacity, x_Offset, y_Offset);
 		}
 	}
 }

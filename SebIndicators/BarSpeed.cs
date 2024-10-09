@@ -185,7 +185,19 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
             double bpm = Math.Round(nbBars / (double)TimeRangeInMinutes, 2);
             double barDuration = (nbBars > 0) ? Math.Round(nbSecs / nbBars, 1) : 0;
 
+            //Print($"nbSecs: {nbSecs}, barDuration: {barDuration}s, nbBars:{nbBars}");
+
             string barDurationStr = "";
+            if (barDuration >= 3600)
+            {
+                double hours = Math.Floor(barDuration / 3600);
+                double minutes = Math.Floor((barDuration % 3600) / 60);
+                double seconds = Math.Round(barDuration % 60);
+                barDurationStr = hours + "h ";
+                barDurationStr += ((minutes >= 1) ? minutes + "m " : "");
+                barDurationStr += ((seconds >= 1) ? seconds + "s" : "");
+            }
+            else
             if (barDuration >= 60)
             {
                 int remaingSecs = ((int)barDuration % 60);
@@ -251,15 +263,16 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
             //Print($"nbSecs: {nbSecs}, barDuration: {barDuration}s");
 
             string barDurationStr = "";
-            //if (barDuration >= 3600)
-            //{
-            //    int remainingSecs = ((int)barDuration % 3600);
-            //    int remaingMins = ((int)barDuration % 60);
-            //    barDurationStr = Math.Floor(barDuration / 3600) + "h ";
-            //    barDurationStr += ((remaingMins >= 1) ? remaingMins + "s" : "");
-            //    barDurationStr += ((remainingSecs >= 1) ? remainingSecs + "s" : "");
-            //}
-            //else 
+            if (barDuration >= 3600)
+            {
+                double hours = Math.Floor(barDuration / 3600);
+                double minutes = Math.Floor((barDuration % 3600) / 60);
+                double seconds = Math.Round(barDuration % 60);
+                barDurationStr = hours + "h ";
+                barDurationStr += ((minutes >= 1) ? minutes + "m " : "");
+                barDurationStr += ((seconds >= 1) ? seconds + "s" : "");
+            }
+            else
             if (barDuration >= 60)
             {
                 int remaingSecs = ((int)barDuration % 60);
@@ -272,6 +285,7 @@ namespace NinjaTrader.NinjaScript.Indicators.SebIndicators
 
             string plural = (nbBarSpan > 1) ? "s" : "";
             outputText = $"BAR SPEED [last {nbBarSpan} bar{plural}]\n";
+			//outputText = $"BAR SPEED [last {nbBarSpan} closed bar{plural}]\n";
             if (barDuration > 0)
             {
                 outputText += $"1 bar \u2248 {barDurationStr}\n";

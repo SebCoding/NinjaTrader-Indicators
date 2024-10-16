@@ -70,11 +70,11 @@ using System.Net.Http;
 using System.Collections.Specialized;
 using System.Reflection;
 
-using Indicators.awxEconomicNews_namespace2;
+using Indicators.awxEconomicNews2_namespace2;
 using System.Runtime.Remoting.Messaging;
 using System.Runtime.CompilerServices;
 
-namespace Indicators.awxEconomicNews_namespace2
+namespace Indicators.awxEconomicNews2_namespace2
 {
     #region NewsImpact Enum
     public enum NewsImpact      // Indicates the impact of a specific news item

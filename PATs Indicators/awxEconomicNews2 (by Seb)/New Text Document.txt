@@ -1,0 +1,4 @@
+Do you have the original awxEconomicNews indicator installed now?
+If yes, you first need to uninstall it and then install the new version (see video)
+
+I don't recommended adding the indicator to more than 1 chart because that could  make you exceed the max limit of request on the news server
